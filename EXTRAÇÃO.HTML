@@ -10,9 +10,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="home.css" />
+    <link rel="stylesheet" href="EXTRAÇÃO.CSS" />
     <title>Painel Principal</title>
     <style>
       /* Estilos para a área do usuário no navbar */
@@ -47,6 +46,97 @@
         color: #999;
         font-size: 20px;
       }
+      
+      /* Estilos para o banner */
+      .banner-container {
+        margin-left: 270px;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+      }
+      
+      .rd-banner {
+        background: linear-gradient(135deg, #04befe 0%, #4481eb 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+      }
+      
+      .rd-banner:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      }
+      
+      .rd-banner i {
+        font-size: 48px;
+        margin-bottom: 15px;
+      }
+      
+      .rd-banner h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+      }
+      
+      .rd-banner p {
+        margin: 10px 0 0;
+        font-size: 16px;
+      }
+      
+      /* Responsividade */
+      @media (max-width: 768px) {
+        .banner-container {
+          margin-left: 220px;
+          padding: 15px;
+        }
+        
+        .rd-banner {
+          height: 180px;
+        }
+        
+        .rd-banner i {
+          font-size: 40px;
+        }
+        
+        .rd-banner h2 {
+          font-size: 20px;
+        }
+        
+        .rd-banner p {
+          font-size: 14px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .banner-container {
+          margin-left: 0;
+          padding: 10px;
+        }
+        
+        .rd-banner {
+          height: 160px;
+          padding: 15px;
+        }
+        
+        .rd-banner i {
+          font-size: 36px;
+        }
+        
+        .rd-banner h2 {
+          font-size: 18px;
+        }
+      }
     </style>
   </head>
 
@@ -60,59 +150,32 @@
         </div>
       </div>
       <ul class="nav-links">
-        <li><a href="../HOME/home.html">Home</a></li>
-        <li><a href="../DASHBOARD/dashboard.html">Perfil</a></li>
+        <li><a href="home.html">Home</a></li>
+        <li><a href="dashboard.html">Perfil</a></li>
         <li class="has-submenu">
           <a href="#" id="checklistToggle">Checklist ▾</a>
           <ul class="submenu" id="checklistMenu">
-            <li><a href="../chck/limpeza.html">Checklist de Limpeza</a></li>
-            <li><a href="../chck/rd.html">Checklist de RD</a></li>
-            <li><a href="../chck/acidente.html">Acidente</a></li>
+            <li><a href="limpeza.html">Checklist de Limpeza</a></li>
+            <li><a href="rd.html">Checklist de RD</a></li>
+            <li><a href="acidente.html">Acidente</a></li>
           </ul>
         </li>
-        <li><a href="../EXTRAÇÃO/EXTRAÇÃO.HTML">Extração</a></li>
+        <li><a href="EXTRAÇÃO.HTML">Extração</a></li>
       </ul>
     </div>
-
-    <div class="content">
-      <!-- Container para os dados de registros e gráficos -->
-      <div class="menu-container">
-        <h2>Resumo de Registros</h2>
-        <div class="menu-options" id="cleaningRecordsContainer">
-          <!-- Aqui será exibido o resumo dos registros -->
-        </div>
-
-        <!-- Card de total de registros -->
-        <div class="card">
-          <h3>Total de Check Aplicados</h3>
-          <p id="totalCheck">Carregando...</p>
-        </div>
-
-        <!-- Gráfico de contagem -->
-        <canvas id="recordChart" width="400" height="200"></canvas>
-      </div>
-
-      <!-- Container separado para a tabela de usuários -->
-      <div class="user-table-container">
-        <h3>Tabela de Usuários</h3>
-        <table id="userTable" border="1">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>E-mail</th>
-            </tr>
-          </thead>
-          <tbody id="userTableBody">
-            <!-- Usuários serão listados aqui -->
-          </tbody>
-        </table>
-        <p id="userCount">Total de Usuários: 0</p>
+    
+    <!-- Banner para visualização do checklist RD -->
+    <div class="banner-container">
+      <div class="rd-banner" id="rdBanner">
+        <i class="fas fa-clipboard-check"></i>
+        <h2>Visualização Checklist RD</h2>
+        <p>Clique aqui para acessar os checklists RD preenchidos</p>
       </div>
     </div>
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-      import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+      import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
       import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
       const firebaseConfig = {
@@ -145,92 +208,21 @@
         document.getElementById('user-photo-placeholder').style.display = 'none';
       };
 
-      // Função para obter os registros de limpeza
-      const getCleaningRecords = async () => {
-        const cleaningRecordsRef = ref(database, 'cleaningRecords/');
-        const snapshot = await get(cleaningRecordsRef);
-        return snapshot.exists() ? snapshot.val() : {};
-      };
-
-      // Função para obter os registros de RD
-      const getRdRecords = async () => {
-        const rdRecordsRef = ref(database, 'rdRecords/');
-        const snapshot = await get(rdRecordsRef);
-        return snapshot.exists() ? snapshot.val() : {};
-      };
-
-      // Função para obter os registros de ocorrências
-      const getOccurrenceRecords = async () => {
-        const occurrenceRecordsRef = ref(database, 'occurrenceRecords/');
-        const snapshot = await get(occurrenceRecordsRef);
-        return snapshot.exists() ? snapshot.val() : {};
-      };
-
-      // Função para obter os usuários
-      const getUsers = async () => {
-        const usersRef = ref(database, 'users/');
-        const snapshot = await get(usersRef);
-        return snapshot.exists() ? snapshot.val() : {};
-      };
-
-      // Função para exibir o total de registros e o gráfico
-      const displayRecordsSummary = async () => {
-        const cleaningRecords = await getCleaningRecords();
-        const rdRecords = await getRdRecords();
-        const occurrenceRecords = await getOccurrenceRecords();
-        const users = await getUsers();
-
-        // Total de registros
-        const totalCleaning = Object.keys(cleaningRecords).length;
-        const totalRd = Object.keys(rdRecords).length;
-        const totalOccurrences = Object.keys(occurrenceRecords).length;
-        const totalCheck = totalCleaning + totalRd + totalOccurrences;
-
-        document.getElementById('totalCheck').innerText = `${totalCheck} registros`;
-
-        // Exibindo a tabela de usuários
-        const userTableBody = document.getElementById('userTableBody');
-        const userCount = document.getElementById('userCount');
-        userTableBody.innerHTML = ''; // Limpa a tabela antes de adicionar os novos usuários
-
-        Object.values(users).forEach(user => {
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>${user.fullName || user.email.split('@')[0]}</td><td>${user.email}</td>`;
-          userTableBody.appendChild(row);
-        });
-
-        userCount.innerText = `Total de Usuários: ${Object.keys(users).length}`;
-
-        // Preparar dados para o gráfico
-        const data = {
-          labels: ['Limpeza', 'RD', 'Ocorrências'],
-          datasets: [{
-            label: 'Quantidade de Registros',
-            data: [totalCleaning, totalRd, totalOccurrences],
-            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-            hoverBackgroundColor: ['#FF5733', '#4B9FD1', '#FFB347']
-          }]
-        };
-
-        // Criar gráfico
-        const ctx = document.getElementById('recordChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: data,
-          options: {
-            responsive: true,
-            scales: {
-              y: {
-                beginAtZero: true
-              }
-            }
-          }
-        });
-      };
-
       // Carregar os registros quando a página for carregada
       document.addEventListener('DOMContentLoaded', () => {
-        displayRecordsSummary();
+        // Verifica se há um nome salvo no localStorage
+        const savedUser = localStorage.getItem("userEmail");
+        
+        if (savedUser) {
+          document.getElementById("user-name").innerText = savedUser;
+        } else {
+          document.getElementById("user-name").innerText = "Visitante";
+        }
+        
+        // Adiciona evento de clique ao banner
+        document.getElementById('rdBanner').addEventListener('click', () => {
+          window.location.href = 'visualizacao_checklist_rd.html';
+        });
       });
 
       // Exibindo o nome do usuário e foto através do Firebase Auth
