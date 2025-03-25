@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklists para Eliminação</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="wvisualizacao_checklist_eliminar.css">
+    <link rel="icon" href="img/social-media.gif" type="image/x-icon">
+    <style>
+        /* Adicionando os novos estilos para a seção de finalização */
+        .finalization-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #6c757d;
+        }
+        
+        .finalization-section h4 {
+            color: #495057;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .finalization-section h4 i {
+            margin-right: 8px;
+        }
+        
+        .finalization-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+        
+        .finalization-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .btn-save-later {
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-save-later:hover {
+            background-color: #e0a800;
+        }
+        
+        .btn-save-final {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-save-final:hover {
+            background-color: #218838;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+        
+        .status-pendente {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .status-processo {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .status-concluido {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        /* Adicionando o filtro de status */
+        .filter-group.status-filter {
+            min-width: 180px;
+        }
+        
+        .filter-group.status-filter select {
+            text-transform: capitalize;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-shield-alt"></i> Checklists para Eliminação</h1>
+        <p>Registros de incidentes e não conformidades</p>
+    </div>
+
+    <div class="filters">
+        <div class="filter-group">
+            <label for="dateFilter">Filtrar por Data:</label>
+            <input type="date" id="dateFilter">
+        </div>
+        <div class="filter-group">
+            <label for="employeeFilter">Filtrar por Funcionário:</label>
+            <input type="text" id="employeeFilter" placeholder="Nome do funcionário">
+        </div>
+        <div class="filter-group status-filter">
+            <label for="statusFilter">Filtrar por Status:</label>
+            <select id="statusFilter">
+                <option value="">Todos</option>
+                <option value="pendente">Pendente</option>
+                <option value="processo">Em Processo</option>
+                <option value="concluido">Concluído</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="records-container" id="recordsContainer">
+        <div class="loading">Carregando registros...</div>
+    </div>
+
+    <!-- Modal para senha de administrador -->
+    <div class="password-modal" id="passwordModal">
+        <div class="password-modal-content">
+            <h3>Digite a senha de administrador</h3>
+            <input type="password" id="adminPassword" placeholder="Senha de administrador">
+            <div class="password-modal-buttons">
+                <button class="password-modal-cancel" id="cancelDelete">Cancelar</button>
+                <button class="password-modal-confirm" id="confirmDelete">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, onValue, remove, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.firebasestorage.app",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+    
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+    
+        // Format date for display
+        function formatDisplayDate(dateString) {
+            if (!dateString) return 'Não informado';
+            try {
+                const date = new Date(dateString);
+                return isNaN(date) ? 'Data inválida' : date.toLocaleDateString('pt-BR');
+            } catch {
+                return 'Data inválida';
+            }
+        }
+    
+        // Format date for comparison (YYYY-MM-DD)
+        function formatDateForComparison(dateString) {
+            const date = new Date(dateString);
+            return date.toISOString().split('T')[0];
+        }
+    
+        // Filter and sort records
+        function processRecords(data, dateFilter, employeeFilter, statusFilter) {
+            if (!data) return [];
+            
+            return Object.entries(data)
+                .map(([key, record]) => ({ 
+                    key, 
+                    ...record,
+                    // Define status padrão como "pendente" se não existir
+                    status: record.status || 'pendente'
+                }))
+                .filter(record => {
+                    // Filter by date if specified
+                    const dateMatch = !dateFilter || 
+                        formatDateForComparison(record.date) === dateFilter;
+                    
+                    // Filter by employee name if specified
+                    const employeeMatch = !employeeFilter || 
+                        (record.employee && record.employee.name && 
+                         record.employee.name.toLowerCase().includes(employeeFilter.toLowerCase()));
+                    
+                    // Filter by status if specified
+                    const statusMatch = !statusFilter || 
+                        (record.status && record.status.toLowerCase() === statusFilter.toLowerCase());
+                    
+                    return dateMatch && employeeMatch && statusMatch;
+                })
+                .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date (newest first)
+        }
+    
+        // Get status badge HTML
+        function getStatusBadge(status) {
+            const statusText = status || 'pendente';
+            const statusClass = {
+                'pendente': 'status-pendente',
+                'processo': 'status-processo',
+                'concluido': 'status-concluido'
+            }[statusText.toLowerCase()] || 'status-pendente';
+            
+            return `<span class="status-badge ${statusClass}">${statusText.charAt(0).toUpperCase() + statusText.slice(1)}</span>`;
+        }
+    
+        // Display records
+        function displayRecords(filteredRecords) {
+            const recordsContainer = document.getElementById('recordsContainer');
+            recordsContainer.innerHTML = '';
+    
+            if (filteredRecords.length === 0) {
+                recordsContainer.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
+                return;
+            }
+    
+            filteredRecords.forEach(record => {
+                const recordCard = document.createElement('div');
+                recordCard.className = 'record-card';
+                
+                // Format employee info
+                const employeeInfo = record.employee || {};
+                const status = record.status || 'pendente';
+                
+                // Format answers
+                let answersHTML = '';
+                if (record.answers) {
+                    answersHTML = `
+                        <div class="answers-section">
+                            <h3 class="section-title">Detalhes do Incidente</h3>
+                            
+                            <div class="question-group">
+                                <div class="info-row">
+                                    <span class="info-label">1. Houve vítimas?</span>
+                                    <span class="info-value ${record.answers.q1 === 'Sim' ? 'danger-highlight' : 'highlight'}">
+                                        ${record.answers.q1 || 'Não informado'}
+                                    </span>
+                                </div>
+                                
+                                ${record.answers.q1_1 ? `
+                                <div class="subquestion">
+                                    <div class="info-row">
+                                        <span class="info-label">1.1 Houve necessidade de atendimento médico?</span>
+                                        <span class="info-value ${record.answers.q1_1 === 'Sim' ? 'danger-highlight' : 'highlight'}">
+                                            ${record.answers.q1_1}
+                                        </span>
+                                    </div>
+                                </div>` : ''}
+                                
+                                ${record.answers.q1_2 ? `
+                                <div class="subquestion">
+                                    <div class="info-row">
+                                        <span class="info-label">1.2 Classifique o tipo de lesão conforme visto:</span>
+                                        <span class="info-value ${record.answers.q1_2 === 'Grave' ? 'danger-highlight' : 'warning-highlight'}">
+                                            ${record.answers.q1_2}
+                                        </span>
+                                    </div>
+                                </div>` : ''}
+                            </div>
+                            
+                            <div class="question-group">
+                                <div class="info-row">
+                                    <span class="info-label">2. Houve danos à estrutura?</span>
+                                    <span class="info-value ${record.answers.q2 === 'Sim' ? 'danger-highlight' : 'highlight'}">
+                                        ${record.answers.q2 || 'Não informado'}
+                                    </span>
+                                </div>
+                                
+                                ${record.answers.q2_1 ? `
+                                <div class="subquestion">
+                                    <div class="info-row">
+                                        <span class="info-label">2.1 Danos vão ter custo para a Guizilim?</span>
+                                        <span class="info-value ${record.answers.q2_1 === 'Sim' ? 'danger-highlight' : 'highlight'}">
+                                            ${record.answers.q2_1}
+                                        </span>
+                                    </div>
+                                </div>` : ''}
+                                
+                                ${record.answers.q2_2 ? `
+                                <div class="subquestion">
+                                    <div class="info-row">
+                                        <span class="info-label">2.2 Na sua avaliação, qual seria o nível de dano à estrutura?</span>
+                                        <span class="info-value ${record.answers.q2_2.includes('3') ? 'danger-highlight' : 'warning-highlight'}">
+                                            ${record.answers.q2_2}
+                                        </span>
+                                    </div>
+                                </div>` : ''}
+                            </div>
+                            
+                            <div class="question-group">
+                                <div class="info-row">
+                                    <span class="info-label">3. Houve descumprimento das Regras de Ouro?</span>
+                                    <span class="info-value ${record.answers.q3 === 'Sim' ? 'danger-highlight' : 'highlight'}">
+                                        ${record.answers.q3 || 'Não informado'}
+                                    </span>
+                                </div>
+                                
+                                ${record.answers.q3_1 ? `
+                                <div class="subquestion">
+                                    <div class="info-row">
+                                        <span class="info-label">3.1 Qual regra foi descumprida?</span>
+                                        <span class="info-value danger-highlight">
+                                            ${record.answers.q3_1}
+                                        </span>
+                                    </div>
+                                </div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Format action plan
+                const actionPlanHTML = record.actionPlan ? `
+                    <div class="action-plan">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Plano de Ação:</h4>
+                        <p>${record.actionPlan}</p>
+                    </div>
+                ` : '';
+                
+                // Format finalization section
+                const finalizationHTML = `
+                    <div class="finalization-section">
+                        <h4><i class="fas fa-clipboard-check"></i> Finalização ${getStatusBadge(status)}</h4>
+                        <textarea class="finalization-textarea" placeholder="Descreva como a situação foi corrigida..." 
+                            ${status === 'concluido' ? 'readonly' : ''}>${record.finalization || ''}</textarea>
+                        ${status !== 'concluido' ? `
+                        <div class="finalization-buttons">
+                            <button class="btn-save-later" data-record-id="${record.key}">
+                                Salvar e Continuar Depois
+                            </button>
+                            <button class="btn-save-final" data-record-id="${record.key}">
+                                Concluir Definitivamente
+                            </button>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                // Format damage details (hidden by default)
+                const damageDetailsHTML = record.damages ? `
+                    <div class="card-details">
+                        <div class="damage-details">
+                            <h4><i class="fas fa-car-crash"></i> Detalhes dos Danos</h4>
+                            <div class="info-row">
+                                <span class="info-label">ID da Ocorrência:</span>
+                                <span class="info-value">${record.damages.occurrenceID || 'Não informado'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Tipo de Ocorrência:</span>
+                                <span class="info-value">${record.damages.occurrenceType || 'Não informado'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Tipo:</span>
+                                <span class="info-value">${record.damages.type || 'Não informado'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Natureza:</span>
+                                <span class="info-value">${record.damages.nature || 'Não informado'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Local:</span>
+                                <span class="info-value">${record.damages.location || 'Não informado'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Nível:</span>
+                                <span class="info-value ${record.damages.level >= 3 ? 'danger-highlight' : 'warning-highlight'}">
+                                    ${record.damages.level || 'Não informado'}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Data:</span>
+                                <span class="info-value">${formatDisplayDate(record.damages.date)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Hora:</span>
+                                <span class="info-value">${record.damages.time || 'Não informado'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Responsável:</span>
+                                <span class="info-value">${record.damages.responsibleName || 'Não informado'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Timestamp:</span>
+                                <span class="info-value">${new Date(record.damages.timestamp).toLocaleString()}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Descrição:</span>
+                                <span class="info-value">${record.damages.description || 'Não informado'}</span>
+                            </div>
+                            ${record.damages.victim ? `
+                            <div class="info-row">
+                                <span class="info-label">Vítima:</span>
+                                <span class="info-value danger-highlight">${record.damages.victim}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                ` : '';
+                
+                recordCard.innerHTML = `
+                    <button class="delete-btn" data-record-id="${record.key}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <div class="card-header">
+                        <h3>${formatDisplayDate(record.date)} - ${employeeInfo.name || 'Sem nome'}</h3>
+                        <button class="toggle-btn">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">Funcionário:</span>
+                            <span class="info-value">${employeeInfo.name || 'Não informado'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Idade:</span>
+                            <span class="info-value">${employeeInfo.age || 'Não informado'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Turno:</span>
+                            <span class="info-value">${employeeInfo.workSchedule || 'Não informado'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Descrição:</span>
+                            <span class="info-value">${record.description || 'Não informado'}</span>
+                        </div>
+                        
+                        ${answersHTML}
+                        ${actionPlanHTML}
+                        ${finalizationHTML}
+                    </div>
+                    ${damageDetailsHTML}
+                `;
+                
+                recordsContainer.appendChild(recordCard);
+            });
+
+            // Adiciona event listeners para os botões de deletar
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const recordId = btn.getAttribute('data-record-id');
+                    showPasswordModal(recordId);
+                });
+            });
+
+            // Adiciona event listeners para os botões de toggle
+            document.querySelectorAll('.card-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const card = header.parentElement;
+                    const details = card.querySelector('.card-details');
+                    const toggleBtn = header.querySelector('.toggle-btn');
+                    
+                    if (details) {
+                        details.classList.toggle('show');
+                        toggleBtn.classList.toggle('rotated');
+                    }
+                });
+            });
+
+            // Adiciona event listeners para os botões de finalização
+            document.querySelectorAll('.btn-save-later').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const recordId = this.getAttribute('data-record-id');
+                    const card = this.closest('.record-card');
+                    const textarea = card.querySelector('.finalization-textarea');
+                    saveFinalization(recordId, textarea.value, 'processo');
+                });
+            });
+
+            document.querySelectorAll('.btn-save-final').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const recordId = this.getAttribute('data-record-id');
+                    const card = this.closest('.record-card');
+                    const textarea = card.querySelector('.finalization-textarea');
+                    saveFinalization(recordId, textarea.value, 'concluido');
+                });
+            });
+        }
+
+        // Função para salvar a finalização
+        function saveFinalization(recordId, finalizationText, status) {
+            if (!finalizationText.trim()) {
+                alert('Por favor, descreva como a situação foi corrigida.');
+                return;
+            }
+
+            const updates = {
+                [`DBrdeliminar/${recordId}/finalization`]: finalizationText,
+                [`DBrdeliminar/${recordId}/status`]: status
+            };
+
+            update(ref(database), updates)
+                .then(() => {
+                    alert('Finalização salva com sucesso!');
+                    loadRecords();
+                })
+                .catch((error) => {
+                    console.error('Erro ao salvar finalização:', error);
+                    alert('Ocorreu um erro ao salvar a finalização');
+                });
+        }
+
+        // Mostra o modal de senha
+        function showPasswordModal(recordId) {
+            const modal = document.getElementById('passwordModal');
+            const adminPasswordInput = document.getElementById('adminPassword');
+            const cancelBtn = document.getElementById('cancelDelete');
+            const confirmBtn = document.getElementById('confirmDelete');
+
+            // Limpa o input
+            adminPasswordInput.value = '';
+
+            // Mostra o modal
+            modal.style.display = 'flex';
+
+            // Função para fechar o modal
+            const closeModal = () => {
+                modal.style.display = 'none';
+            };
+
+            // Configura os event listeners
+            cancelBtn.onclick = closeModal;
+
+            confirmBtn.onclick = () => {
+                const enteredPassword = adminPasswordInput.value;
+                const adminPassword = "123Qwetr@#$%"; // Senha de administrador
+
+                if (enteredPassword === adminPassword) {
+                    // Senha correta, deleta o registro
+                    deleteRecord(recordId);
+                    closeModal();
+                } else {
+                    // Senha incorreta
+                    alert('Senha de administrador incorreta!');
+                }
+            };
+        }
+
+        // Deleta um registro do banco de dados
+        function deleteRecord(recordId) {
+            const recordRef = ref(database, `DBrdeliminar/${recordId}`);
+            
+            remove(recordRef)
+                .then(() => {
+                    console.log('Registro deletado com sucesso');
+                    // Recarrega os registros para atualizar a lista
+                    loadRecords();
+                })
+                .catch((error) => {
+                    console.error('Erro ao deletar registro:', error);
+                    alert('Ocorreu um erro ao deletar o registro');
+                });
+        }
+    
+        // Fetch and load records
+        function loadRecords() {
+            const recordsRef = ref(database, 'DBrdeliminar/');
+            const dateFilter = document.getElementById('dateFilter');
+            const employeeFilter = document.getElementById('employeeFilter');
+            const statusFilter = document.getElementById('statusFilter');
+    
+            // Function to apply filters
+            const applyFilters = () => {
+                onValue(recordsRef, (snapshot) => {
+                    const data = snapshot.val();
+                    const filteredRecords = processRecords(
+                        data, 
+                        dateFilter.value, 
+                        employeeFilter.value,
+                        statusFilter.value
+                    );
+                    displayRecords(filteredRecords);
+                }, {
+                    onlyOnce: false
+                });
+            };
+    
+            // Initial load
+            applyFilters();
+    
+            // Add event listeners for filters
+            dateFilter.addEventListener('change', applyFilters);
+            employeeFilter.addEventListener('input', applyFilters);
+            statusFilter.addEventListener('change', applyFilters);
+        }
+    
+        // Load records when page loads
+        window.addEventListener('DOMContentLoaded', loadRecords);
+    </script>
+</body>
+</html>

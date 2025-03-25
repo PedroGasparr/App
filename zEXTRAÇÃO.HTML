@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="img/social-media.gif" type="image/x-icon">
     
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
@@ -53,6 +54,9 @@
         padding: 20px;
         display: flex;
         justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
       }
       
       .rd-banner {
@@ -73,23 +77,41 @@
         height: 200px;
       }
       
-      .rd-banner:hover {
+      .eliminar-banner {
+        background: linear-gradient(135deg, #fe4f4f 0%, #eb4444 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+      }
+      
+      .rd-banner:hover, .eliminar-banner:hover {
         transform: translateY(-5px);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
       }
       
-      .rd-banner i {
+      .rd-banner i, .eliminar-banner i {
         font-size: 48px;
         margin-bottom: 15px;
       }
       
-      .rd-banner h2 {
+      .rd-banner h2, .eliminar-banner h2 {
         margin: 0;
         font-size: 24px;
         font-weight: 600;
       }
       
-      .rd-banner p {
+      .rd-banner p, .eliminar-banner p {
         margin: 10px 0 0;
         font-size: 16px;
       }
@@ -101,19 +123,19 @@
           padding: 15px;
         }
         
-        .rd-banner {
+        .rd-banner, .eliminar-banner {
           height: 180px;
         }
         
-        .rd-banner i {
+        .rd-banner i, .eliminar-banner i {
           font-size: 40px;
         }
         
-        .rd-banner h2 {
+        .rd-banner h2, .eliminar-banner h2 {
           font-size: 20px;
         }
         
-        .rd-banner p {
+        .rd-banner p, .eliminar-banner p {
           font-size: 14px;
         }
       }
@@ -124,16 +146,16 @@
           padding: 10px;
         }
         
-        .rd-banner {
+        .rd-banner, .eliminar-banner {
           height: 160px;
           padding: 15px;
         }
         
-        .rd-banner i {
+        .rd-banner i, .eliminar-banner i {
           font-size: 36px;
         }
         
-        .rd-banner h2 {
+        .rd-banner h2, .eliminar-banner h2 {
           font-size: 18px;
         }
       }
@@ -170,6 +192,13 @@
         <i class="fas fa-clipboard-check"></i>
         <h2>Visualização Checklist RD</h2>
         <p>Clique aqui para acessar os checklists RDO preenchidos</p>
+      </div>
+      
+      <!-- Novo banner para visualização de checklists a eliminar -->
+      <div class="eliminar-banner" id="eliminarBanner">
+        <i class="fas fa-shield-alt"></i>
+        <h2>Visualização Checklist Pré-Eliminar</h2>
+        <p>Clique aqui para acessar os checklists</p>
       </div>
     </div>
 
@@ -219,9 +248,14 @@
           document.getElementById("user-name").innerText = "Visitante";
         }
         
-        // Adiciona evento de clique ao banner
+        // Adiciona evento de clique ao banner RD
         document.getElementById('rdBanner').addEventListener('click', () => {
           window.location.href = 'zvisualizacao_checklist_rd.html';
+        });
+        
+        // Adiciona evento de clique ao banner Eliminar
+        document.getElementById('eliminarBanner').addEventListener('click', () => {
+          window.location.href = 'zvisualizacao_checklist_eliminar.html';
         });
       });
 
