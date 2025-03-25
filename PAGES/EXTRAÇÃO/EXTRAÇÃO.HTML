@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    
+    <link rel="stylesheet" href="EXTRAÇÃO.CSS" />
+    <title>Painel Principal</title>
+    <style>
+      /* Estilos para a área do usuário no navbar */
+      .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        margin-right: 20px;
+      }
+      
+      .user-photo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-top: 5px;
+        border: 2px solid #fff;
+      }
+      
+      .user-photo-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .user-photo-placeholder i {
+        color: #999;
+        font-size: 20px;
+      }
+      
+      /* Estilos para o banner */
+      .banner-container {
+        margin-left: 270px;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+      }
+      
+      .rd-banner {
+        background: linear-gradient(135deg, #04befe 0%, #4481eb 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+      }
+      
+      .rd-banner:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      }
+      
+      .rd-banner i {
+        font-size: 48px;
+        margin-bottom: 15px;
+      }
+      
+      .rd-banner h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+      }
+      
+      .rd-banner p {
+        margin: 10px 0 0;
+        font-size: 16px;
+      }
+      
+      /* Responsividade */
+      @media (max-width: 768px) {
+        .banner-container {
+          margin-left: 220px;
+          padding: 15px;
+        }
+        
+        .rd-banner {
+          height: 180px;
+        }
+        
+        .rd-banner i {
+          font-size: 40px;
+        }
+        
+        .rd-banner h2 {
+          font-size: 20px;
+        }
+        
+        .rd-banner p {
+          font-size: 14px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .banner-container {
+          margin-left: 0;
+          padding: 10px;
+        }
+        
+        .rd-banner {
+          height: 160px;
+          padding: 15px;
+        }
+        
+        .rd-banner i {
+          font-size: 36px;
+        }
+        
+        .rd-banner h2 {
+          font-size: 18px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="user-info">
+        <p>Bem-vindo! <span id="user-name"></span></p>
+        <img id="user-photo" class="user-photo" style="display: none;" />
+        <div id="user-photo-placeholder" class="user-photo-placeholder">
+          <i class="fas fa-user"></i>
+        </div>
+      </div>
+      <ul class="nav-links">
+        <li><a href="../HOME/home.html">Home</a></li>
+        <li><a href="../DASHBOARD/dashboard.html">Perfil</a></li>
+        <li class="has-submenu">
+          <a href="#" id="checklistToggle">Checklist ▾</a>
+          <ul class="submenu" id="checklistMenu">
+            <li><a href="../chck/limpeza.html">Checklist de Limpeza</a></li>
+            <li><a href="../chck/rd.html">Checklist de RD</a></li>
+            <li><a href="../chck/acidente.html">Acidente</a></li>
+          </ul>
+        </li>
+        <li><a href="../EXTRAÇÃO/EXTRAÇÃO.HTML">Extração</a></li>
+      </ul>
+    </div>
+    
+    <!-- Banner para visualização do checklist RD -->
+    <div class="banner-container">
+      <div class="rd-banner" id="rdBanner">
+        <i class="fas fa-clipboard-check"></i>
+        <h2>Visualização Checklist RD</h2>
+        <p>Clique aqui para acessar os checklists RD preenchidos</p>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+      import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+        authDomain: "application-gzl.firebaseapp.com",
+        databaseURL: "https://application-gzl-default-rtdb.firebaseio.com/",
+        projectId: "application-gzl",
+        storageBucket: "application-gzl.firebasestorage.app",
+        messagingSenderId: "319900903265",
+        appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+        measurementId: "G-ZRRFQZXT54"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
+      const auth = getAuth(app);
+
+      // Variável para armazenar o avatar aleatório gerado
+      let randomAvatarUrl = '';
+
+      // Função para gerar um número aleatório entre 1 e 99
+      const getRandomAvatarId = () => Math.floor(Math.random() * 99) + 1;
+
+      // Função para carregar o mesmo avatar aleatório
+      const loadRandomAvatar = () => {
+        const randomId = getRandomAvatarId();
+        randomAvatarUrl = `https://avatar.iran.liara.run/public/${randomId}`;
+        document.getElementById('user-photo').src = randomAvatarUrl;
+        document.getElementById('user-photo').style.display = 'block';
+        document.getElementById('user-photo-placeholder').style.display = 'none';
+      };
+
+      // Carregar os registros quando a página for carregada
+      document.addEventListener('DOMContentLoaded', () => {
+        // Verifica se há um nome salvo no localStorage
+        const savedUser = localStorage.getItem("userEmail");
+        
+        if (savedUser) {
+          document.getElementById("user-name").innerText = savedUser;
+        } else {
+          document.getElementById("user-name").innerText = "Visitante";
+        }
+        
+        // Adiciona evento de clique ao banner
+        document.getElementById('rdBanner').addEventListener('click', () => {
+          window.location.href = '../VIEW_CHCK/visualizacao_checklist_rd.html';
+        });
+      });
+
+      // Exibindo o nome do usuário e foto através do Firebase Auth
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const userEmail = user.email;
+          const userName = user.displayName || userEmail.split('@')[0]; // Pega apenas a parte antes do @
+          
+          localStorage.setItem("userEmail", userName);
+          document.getElementById('user-name').innerText = userName;
+
+          // Carregar avatar aleatório como padrão
+          loadRandomAvatar();
+
+          // Verificar se o usuário tem foto no banco de dados
+          const userRef = ref(database, `users/${user.uid}`);
+          onValue(userRef, (snapshot) => {
+            const userData = snapshot.val();
+            if (userData && userData.profilePicture) {
+              // Se existir foto no banco, substitui o avatar aleatório
+              document.getElementById('user-photo').src = 'data:image/jpeg;base64,' + userData.profilePicture;
+              document.getElementById('user-photo').style.display = 'block';
+              document.getElementById('user-photo-placeholder').style.display = 'none';
+            }
+          });
+        } else {
+          document.getElementById('user-name').innerText = "Visitante";
+        }
+      });
+
+      // Garantir que o submenu venha fechado ao carregar a página
+      document.addEventListener('DOMContentLoaded', () => {
+        const submenu = document.getElementById('checklistMenu');
+        submenu.style.display = 'none'; // Deixa o submenu fechado ao carregar
+      });
+
+      // Lógica do submenu de checklist
+      document.getElementById('checklistToggle').addEventListener('click', (event) => {
+        event.preventDefault();
+        const submenu = document.getElementById('checklistMenu');
+        // Alterna a exibição do submenu
+        submenu.style.display = submenu.style.display === 'none' ? 'block' : 'none';
+      });
+
+      // Fechar o submenu se clicar fora dele
+      document.addEventListener("click", function (event) {
+        const checklistToggle = document.getElementById("checklistToggle");
+        const submenu = document.getElementById("checklistMenu");
+
+        if (!checklistToggle.contains(event.target) && !submenu.contains(event.target)) {
+          submenu.style.display = "none"; // Fecha o submenu se clicar fora dele
+        }
+      });
+    </script>
+  </body>
+</html>

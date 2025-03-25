@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    
+    <!-- Estilos -->
+    <link rel="stylesheet" href="dashboard.css" />
+    <title>Painel Principal</title>
+    <style>
+      /* Estilos para a área do usuário no navbar */
+      .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+      }
+      
+      .user-photo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-top: 5px;
+        border: 2px solid #fff;
+      }
+      
+      /* Estilos para a foto de perfil no card */
+      .profile-picture-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #ddd;
+        cursor: pointer;
+      }
+      
+      .profile-picture {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      
+      .upload-btn {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        text-align: center;
+        padding: 5px;
+        font-size: 12px;
+        display: none;
+      }
+      
+      .profile-picture-container:hover .upload-btn {
+        display: block;
+      }
+      
+      #file-input {
+        display: none;
+      }
+      
+      .compression-info {
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="user-info">
+        <p>Bem-vindo! <span id="user-name"></span></p>
+        <img id="user-photo" class="user-photo" />
+      </div>
+      <ul class="nav-links">
+        <li><a href="../HOME/home.html">Home</a></li>
+        <li><a href="../DASHBOARD/dashboard.html">Perfil</a></li>
+        <li class="has-submenu">
+          <a href="#" id="checklistToggle">Checklist ▾</a>
+          <ul class="submenu" id="checklistMenu">
+            <li><a href="../chck/limpeza.html">Checklist de Limpeza</a></li>
+            <li><a href="../chck/rd.html">Checklist de RD</a></li>
+            <li><a href="../chck/acidente.html">Acidente</a></li>
+          </ul>
+        </li>
+        <li><a href="../EXTRAÇÃO/EXTRAÇÃO.HTML">Extração</a></li>
+      </ul>
+    </div>
+
+    <!-- Container de Perfil -->
+    <div class="profile-container">
+      <div class="profile-card">
+        <!-- Container da foto de perfil -->
+        <div class="profile-picture-container" id="profile-picture-container">
+          <img id="profile-picture" class="profile-picture" />
+          <div class="upload-btn">Alterar Foto</div>
+          <input type="file" id="file-input" accept="image/*" />
+        </div>
+        
+        <div class="profile-info">
+          <h2 id="profile-name">Nome do Usuário</h2>
+          <p id="profile-email">email@example.com</p>
+          <p id="profile-role">Cargo: <span id="user-role"></span></p>
+        </div>
+
+        <!-- Formulário para atualizar dados do usuário -->
+        <form id="profile-form">
+          <div class="form-group">
+            <label for="full-name">Nome Completo:</label>
+            <input type="text" id="full-name" name="full-name" required />
+          </div>
+          <div class="form-group">
+            <label for="phone-number">Número de Telefone:</label>
+            <input type="tel" id="phone-number" name="phone-number" required />
+          </div>
+          <div class="form-group">
+            <label for="unit">Unidade:</label>
+            <input type="text" id="unit" name="unit" required />
+          </div>
+          <div class="form-group">
+            <button type="submit">Salvar Dados</button>
+          </div>
+          <div id="feedback-message" class="form-group" style="color: green; font-weight: bold;"></div>
+        </form>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+      import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+        authDomain: "application-gzl.firebaseapp.com",
+        databaseURL: "https://application-gzl-default-rtdb.firebaseio.com/",
+        projectId: "application-gzl",
+        storageBucket: "application-gzl.appspot.com",
+        messagingSenderId: "319900903265",
+        appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+        measurementId: "G-ZRRFQZXT54"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
+      const auth = getAuth(app);
+
+      // Variável para armazenar o avatar aleatório gerado
+      let randomAvatarUrl = '';
+
+      // Função para gerar um número aleatório entre 1 e 99
+      const getRandomAvatarId = () => Math.floor(Math.random() * 99) + 1;
+
+      // Função para carregar o mesmo avatar aleatório em ambos os lugares
+      const loadRandomAvatar = () => {
+        const randomId = getRandomAvatarId();
+        randomAvatarUrl = `https://avatar.iran.liara.run/public/${randomId}`;
+        document.getElementById('user-photo').src = randomAvatarUrl;
+        document.getElementById('profile-picture').src = randomAvatarUrl;
+      };
+
+      // Função para determinar o cargo com base no e-mail
+      const getRoleFromEmail = (email) => {
+        const domain = email.split('@')[1]; // Pega o domínio do e-mail
+        switch (domain) {
+          case 'sup':
+            return 'Supervisor';
+          case 'adm':
+            return 'Administrador';
+          case 'cord':
+            return 'Coordenador';
+          case 'use':
+          default:
+            return 'Usuário Normal';
+        }
+      };
+
+      // Função para comprimir a imagem
+      const compressImage = (file, callback) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Definir o tamanho máximo da imagem
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            
+            let width = img.width;
+            let height = img.height;
+            
+            // Redimensionar se necessário
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Desenhar a imagem redimensionada
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Converter para JPEG com qualidade reduzida
+            canvas.toBlob((blob) => {
+              const reader = new FileReader();
+              reader.readAsDataURL(blob);
+              reader.onloadend = () => {
+                const base64String = reader.result.split(',')[1];
+                callback(base64String);
+              };
+            }, 'image/jpeg', 1); // 0.7 = 70% de qualidade
+          };
+        };
+      };
+
+      // Carregar os registros quando a página for carregada
+      document.addEventListener('DOMContentLoaded', () => {
+        // Configurar o clique na foto de perfil
+        const profilePictureContainer = document.getElementById('profile-picture-container');
+        const fileInput = document.getElementById('file-input');
+        
+        profilePictureContainer.addEventListener('click', () => {
+          fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (event) => {
+          const file = event.target.files[0];
+          if (file) {
+            compressImage(file, (compressedImage) => {
+              // Exibir a imagem comprimida no perfil
+              const profilePicture = document.getElementById('profile-picture');
+              profilePicture.src = 'data:image/jpeg;base64,' + compressedImage;
+              
+              // Atualizar também no navbar
+              document.getElementById('user-photo').src = 'data:image/jpeg;base64,' + compressedImage;
+              
+              // Salvar no banco de dados
+              const user = auth.currentUser;
+              if (user) {
+                const userRef = ref(database, `users/${user.uid}`);
+                set(userRef, {
+                  profilePicture: compressedImage,
+                  // Manter os outros dados existentes
+                  fullName: document.getElementById('full-name').value || '',
+                  phoneNumber: document.getElementById('phone-number').value || '',
+                  unit: document.getElementById('unit').value || '',
+                  email: user.email,
+                  role: getRoleFromEmail(user.email)
+                })
+                .then(() => {
+                  document.getElementById("feedback-message").innerText = 'Foto atualizada com sucesso!';
+                  document.getElementById("feedback-message").style.color = 'green';
+                })
+                .catch((error) => {
+                  document.getElementById("feedback-message").innerText = 'Erro ao salvar foto.';
+                  document.getElementById("feedback-message").style.color = 'red';
+                });
+              }
+            });
+          }
+        });
+      });
+
+      // Exibir informações do usuário
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const userEmail = user.email;
+          const userName = user.displayName || userEmail.split('@')[0];
+          const userRole = getRoleFromEmail(userEmail);
+
+          localStorage.setItem("userEmail", userEmail);
+          document.getElementById('user-name').innerText = userName;
+          document.getElementById('profile-name').innerText = userName;
+          document.getElementById('profile-email').innerText = userEmail;
+          document.getElementById('user-role').innerText = userRole;
+
+          // Carregar avatar aleatório como padrão (mesmo para ambas as imagens)
+          loadRandomAvatar();
+
+          // Carregar dados do usuário do banco de dados
+          const userRef = ref(database, `users/${user.uid}`);
+          onValue(userRef, (snapshot) => {
+            const userData = snapshot.val();
+            if (userData) {
+              document.getElementById('full-name').value = userData.fullName || '';
+              document.getElementById('phone-number').value = userData.phoneNumber || '';
+              document.getElementById('unit').value = userData.unit || '';
+              
+              // Se existir foto no banco, substitui o avatar aleatório em ambos os lugares
+              if (userData.profilePicture) {
+                document.getElementById('profile-picture').src = 'data:image/jpeg;base64,' + userData.profilePicture;
+                document.getElementById('user-photo').src = 'data:image/jpeg;base64,' + userData.profilePicture;
+              }
+            }
+          });
+        } else {
+          window.location.href = '/login.html';
+        }
+      });
+
+      // Salvar dados do usuário no banco de dados
+      document.getElementById('profile-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const user = auth.currentUser;
+        if (user) {
+          const fullName = document.getElementById('full-name').value;
+          const phoneNumber = document.getElementById('phone-number').value;
+          const unit = document.getElementById('unit').value;
+          
+          // Obter a foto de perfil atual (pode ser a padrão ou a enviada pelo usuário)
+          const profilePicture = document.getElementById('profile-picture');
+          let profilePictureData = '';
+          if (profilePicture.src.includes('data:image')) {
+            profilePictureData = profilePicture.src.split(',')[1];
+          }
+
+          const userRef = ref(database, `users/${user.uid}`);
+          set(userRef, {
+            fullName,
+            phoneNumber,
+            unit,
+            email: user.email,
+            role: getRoleFromEmail(user.email),
+            profilePicture: profilePictureData || null
+          })
+            .then(() => {
+              document.getElementById("feedback-message").innerText = 'Dados salvos com sucesso!';
+              document.getElementById("feedback-message").style.color = 'green';
+            })
+            .catch((error) => {
+              document.getElementById("feedback-message").innerText = 'Erro ao salvar dados.';
+              document.getElementById("feedback-message").style.color = 'red';
+            });
+        }
+      });
+
+      // Lógica do submenu de checklist
+      document.addEventListener('DOMContentLoaded', () => {
+        const submenu = document.getElementById('checklistMenu');
+        submenu.style.display = 'none';
+      });
+
+      document.getElementById('checklistToggle').addEventListener('click', (event) => {
+        event.preventDefault();
+        const submenu = document.getElementById('checklistMenu');
+        submenu.style.display = submenu.style.display === 'none' ? 'block' : 'none';
+      });
+
+      document.addEventListener("click", (event) => {
+        const checklistToggle = document.getElementById("checklistToggle");
+        const submenu = document.getElementById("checklistMenu");
+        if (!checklistToggle.contains(event.target) && !submenu.contains(event.target)) {
+          submenu.style.display = "none";
+        }
+      });
+    </script>
+  </body>
+</html>

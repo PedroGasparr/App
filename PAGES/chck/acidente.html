@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de Ocorrências</title>
+    <link rel="stylesheet" href="chckgeral.css">
+    <style>
+        .hidden {
+            display: none;
+        }
+        .conditional-questions {
+            margin-left: 20px;
+            border-left: 2px solid #ccc;
+            padding-left: 15px;
+        }
+        .level-indicator {
+            font-weight: bold;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .level-1 { background-color: #e6f7ff; color: #004085; }
+        .level-2 { background-color: #fff3cd; color: #856404; }
+        .level-3 { background-color: #ffeeba; color: #856404; }
+        .level-4 { background-color: #f8d7da; color: #721c24; }
+        .level-5 { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h1>COMUNICAÇÃO DE OCORRÊNCIA</h1>
+        <form id="occurrenceForm">
+            <!-- Dados Gerais -->
+            <label for="date">Data e Hora:</label>
+            <input type="datetime-local" id="date" required>
+
+            <label for="location">Local:</label>
+            <select id="location" required>
+                <option value="">Selecione o local</option>
+                <option value="Fabrica Suzano Belem">Fábrica Suzano Belém</option>
+                <option value="Fabrica Suzano Limeira">Fábrica Suzano Limeira</option>
+            </select>
+
+            <label for="responsibleName">Nome do Responsável:</label>
+            <input type="text" id="responsibleName" required>
+
+            <!-- Campo de usuário (invisível) -->
+            <label for="userEmail" class="hidden">Usuário:</label>
+            <input type="text" id="userEmail" class="hidden" required>
+
+            <h2>Perguntas de Ocorrência</h2>
+
+            <!-- Pergunta 1 - Vítimas -->
+            <div class="question-group">
+                <label>1. Houve vítimas?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="q1_sim" name="q1" value="Sim" required>
+                        <label for="q1_sim">Sim</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="q1_nao" name="q1" value="Não">
+                        <label for="q1_nao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Perguntas condicionais para vítimas -->
+            <div id="victimQuestions" class="conditional-questions hidden">
+                <div class="question-group">
+                    <label>1.1 Houve necessidade de atendimento médico?</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="q1_1_sim" name="q1_1" value="Sim">
+                            <label for="q1_1_sim">Sim</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="q1_1_nao" name="q1_1" value="Não">
+                            <label for="q1_1_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>1.2 Classifique o tipo de lesão conforme visto:</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="q1_2_superficial" name="q1_2" value="Superficial">
+                            <label for="q1_2_superficial">Superficial - colaborador voltará após atendimento</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="q1_2_moderada" name="q1_2" value="Moderada">
+                            <label for="q1_2_moderada">Moderada - necessária investigação médica</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="q1_2_alta" name="q1_2" value="Alta">
+                            <label for="q1_2_alta">Alta - necessidade de tratativa médica ampla</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 2 - Danos estruturais -->
+            <div class="question-group">
+                <label>2. Houve danos à estrutura?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="q2_sim" name="q2" value="Sim" required>
+                        <label for="q2_sim">Sim</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="q2_nao" name="q2" value="Não">
+                        <label for="q2_nao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Perguntas condicionais para danos estruturais -->
+            <div id="structureQuestions" class="conditional-questions hidden">
+                <div class="question-group">
+                    <label>2.1 Danos vão ter custo para a Guizilim?</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="q2_1_sim" name="q2_1" value="Sim">
+                            <label for="q2_1_sim">Sim</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="q2_1_nao" name="q2_1" value="Não">
+                            <label for="q2_1_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>2.2 Na sua avaliação, qual seria o nível de dano à estrutura?</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="q2_2_nivel1" name="q2_2" value="Nível 1">
+                            <label for="q2_2_nivel1">Nível 1 - Danos superficiais com pequenos reparos e custo baixo</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="q2_2_nivel2" name="q2_2" value="Nível 2">
+                            <label for="q2_2_nivel2">Nível 2 - Danos intermediários com reparos e custo moderado</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="q2_2_nivel3" name="q2_2" value="Nível 3">
+                            <label for="q2_2_nivel3">Nível 3 - Grandes danos, probabilidade de alto custo para reparo ou substituição</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 3 - Descumprimento das regras de ouro -->
+            <div class="question-group">
+                <label>3. Houve descumprimento das Regras de Ouro?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="q3_sim" name="q3" value="Sim" required>
+                        <label for="q3_sim">Sim</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="q3_nao" name="q3" value="Não">
+                        <label for="q3_nao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Perguntas condicionais para regras de ouro -->
+            <div id="goldenRulesQuestions" class="conditional-questions hidden">
+                <div class="question-group">
+                    <label>3.1 Qual regra foi descumprida?</label>
+                    <select id="q3_1" name="q3_1" class="form-control">
+                        <option value="">Selecione a regra descumprida</option>
+                        <option value="Trabalho em altura">Trabalho em altura</option>
+                        <option value="Mão em máquinas em movimento">Mão em máquinas em movimento</option>
+                        <option value="Álcool e drogas">Álcool e drogas</option>
+                        <option value="Acesso a espaço restrito">Acesso a espaço restrito</option>
+                        <option value="Carga suspensa">Carga suspensa</option>
+                        <option value="Espaço confinado">Espaço confinado</option>
+                        <option value="Substâncias perigosas">Substâncias perigosas</option>
+                        <option value="Liberação de trabalho">Liberação de trabalho</option>
+                        <option value="Bloqueio de fonte de energia">Bloqueio de fonte de energia</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Classificação da Ocorrência -->
+            <div id="occurrenceClassification" class="occurrence-type">
+                <h3>Classificação da Ocorrência:</h3>
+                <p id="occurrenceType">-</p>
+                <p id="occurrenceLevel" class="level-indicator">Nível: -</p>
+                <p id="actionPlan">Ações recomendadas: -</p>
+            </div>
+
+            <button type="submit">Enviar</button>
+            <button type="button" class="back-button" onclick="window.location.href = '/pages/HOME/HOME.html';">Voltar ao Dashboard</button>
+        </form>
+    </div>
+
+    <script type="module">
+        // Importando as funções necessárias do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com/",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.firebasestorage.app",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+    
+        // Inicializando o Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+    
+        // Função para salvar dados de ocorrência no Firebase
+        const saveOccurrenceData = (date, location, responsibleName, userEmail, answers, occurrenceType, level, actionPlan) => {
+            const reference = ref(database, 'occurrenceRecords/');
+            const newRecordRef = push(reference);
+            
+            set(newRecordRef, {
+                date: date,
+                location: location,
+                responsibleName: responsibleName,
+                userEmail: userEmail,
+                answers: answers,
+                occurrenceType: occurrenceType,
+                level: level,
+                actionPlan: actionPlan
+            }).then(() => {
+                alert("Dados de ocorrência enviados com sucesso!");
+            }).catch((error) => {
+                console.error("Erro ao salvar dados:", error);
+                alert("Erro ao enviar dados. Por favor, tente novamente.");
+            });
+        };
+    
+        // Função para classificar a ocorrência e determinar o nível
+        const classifyOccurrence = (answers) => {
+            let level = 1; // Inicia com o nível mais baixo
+            let occurrenceType = "Outro tipo de ocorrência";
+            let actionPlan = "Registro e monitoramento. Nenhuma ação imediata necessária.";
+    
+            // Verifica se houve vítimas e classifica
+            if (answers.q1 === "Sim") {
+                occurrenceType = "Ocorrência com vítimas";
+                
+                if (answers.q1_1 === "Sim") {
+                    level = Math.max(level, 2); // Mínimo nível 2 se houve atendimento médico
+                }
+                
+                if (answers.q1_2 === "Superficial") {
+                    level = Math.max(level, 2);
+                } else if (answers.q1_2 === "Moderada") {
+                    level = Math.max(level, 3);
+                } else if (answers.q1_2 === "Alta") {
+                    level = Math.max(level, 5);
+                }
+            }
+    
+            // Verifica se houve danos estruturais e classifica
+            if (answers.q2 === "Sim") {
+                occurrenceType = occurrenceType === "Outro tipo de ocorrência" 
+                    ? "Ocorrência com danos estruturais" 
+                    : occurrenceType + " e danos estruturais";
+                
+                if (answers.q2_1 === "Sim") {
+                    level = Math.max(level, 2); // Mínimo nível 2 se houve custo
+                }
+                
+                if (answers.q2_2 === "Nível 1") {
+                    level = Math.max(level, 2);
+                } else if (answers.q2_2 === "Nível 2") {
+                    level = Math.max(level, 3);
+                } else if (answers.q2_2 === "Nível 3") {
+                    level = Math.max(level, 4);
+                }
+            }
+    
+            // Verifica se houve descumprimento das regras de ouro
+            if (answers.q3 === "Sim" && answers.q3_1) {
+                occurrenceType = occurrenceType === "Outro tipo de ocorrência" 
+                    ? "Descumprimento das Regras de Ouro" 
+                    : occurrenceType + " e descumprimento das Regras de Ouro";
+                
+                // Descumprimento de regras de ouro aumenta o nível de risco
+                level = Math.max(level, 3); // Mínimo nível 3 para descumprimento de regras de ouro
+            }
+    
+            // Determina o plano de ação baseado no nível
+            switch(level) {
+                case 1:
+                    actionPlan = "Registro e monitoramento. Nenhuma ação imediata necessária.";
+                    break;
+                case 2:
+                    actionPlan = "Análise da equipe de segurança. Ajustes nos procedimentos operacionais.";
+                    break;
+                case 3:
+                    actionPlan = "Investigação detalhada. Implementação de medidas corretivas. Treinamento adicional.";
+                    break;
+                case 4:
+                    actionPlan = "Ações imediatas necessárias. Paralisação da área afetada. Revisão completa dos processos.";
+                    break;
+                case 5:
+                    actionPlan = "Emergência. Ativação do plano de contingência. Envolvimento da alta gestão. Notificação às autoridades competentes.";
+                    break;
+                default:
+                    actionPlan = "A ser determinado após análise.";
+            }
+            
+            return { occurrenceType, level, actionPlan };
+        };
+    
+        // Função para obter respostas do formulário, convertendo undefined para null
+        const getFormAnswers = () => {
+            return {
+                q1: document.querySelector('input[name="q1"]:checked')?.value || null,
+                q1_1: document.querySelector('input[name="q1_1"]:checked')?.value || null,
+                q1_2: document.querySelector('input[name="q1_2"]:checked')?.value || null,
+                q2: document.querySelector('input[name="q2"]:checked')?.value || null,
+                q2_1: document.querySelector('input[name="q2_1"]:checked')?.value || null,
+                q2_2: document.querySelector('input[name="q2_2"]:checked')?.value || null,
+                q3: document.querySelector('input[name="q3"]:checked')?.value || null,
+                q3_1: document.getElementById('q3_1')?.value || null
+            };
+        };
+    
+        // Atualiza a data e hora atual ao carregar a página
+        document.addEventListener("DOMContentLoaded", () => {
+            const now = new Date();
+            const timezoneOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+            document.getElementById('date').value = localISOTime;
+            
+            // Preenche o campo de e-mail do usuário logado
+            const userEmail = localStorage.getItem('userEmail');
+            if (userEmail) {
+                document.getElementById('userEmail').value = userEmail;
+            } else {
+                alert("Usuário não autenticado. Faça login novamente.");
+                window.location.href = "/login.html";
+            }
+            
+            // Adiciona listeners para mostrar/ocultar perguntas condicionais
+            document.getElementById('q1_sim').addEventListener('change', function() {
+                document.getElementById('victimQuestions').classList.toggle('hidden', !this.checked);
+            });
+            document.getElementById('q1_nao').addEventListener('change', function() {
+                document.getElementById('victimQuestions').classList.toggle('hidden', this.checked);
+            });
+            
+            document.getElementById('q2_sim').addEventListener('change', function() {
+                document.getElementById('structureQuestions').classList.toggle('hidden', !this.checked);
+            });
+            document.getElementById('q2_nao').addEventListener('change', function() {
+                document.getElementById('structureQuestions').classList.toggle('hidden', this.checked);
+            });
+            
+            document.getElementById('q3_sim').addEventListener('change', function() {
+                document.getElementById('goldenRulesQuestions').classList.toggle('hidden', !this.checked);
+            });
+            document.getElementById('q3_nao').addEventListener('change', function() {
+                document.getElementById('goldenRulesQuestions').classList.toggle('hidden', this.checked);
+            });
+            
+            // Adiciona listeners para atualizar a classificação em tempo real
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('change', updateClassification);
+            });
+        });
+    
+        // Atualiza a classificação da ocorrência em tempo real
+        function updateClassification() {
+            const answers = getFormAnswers();
+            const { occurrenceType, level, actionPlan } = classifyOccurrence(answers);
+            
+            document.getElementById('occurrenceType').textContent = `Tipo: ${occurrenceType}`;
+            document.getElementById('occurrenceLevel').textContent = `Nível: ${level}`;
+            document.getElementById('occurrenceLevel').className = `level-indicator level-${level}`;
+            document.getElementById('actionPlan').textContent = `Ações recomendadas: ${actionPlan}`;
+        }
+    
+        // Adicionando evento ao formulário para capturar e enviar os dados
+        document.getElementById('occurrenceForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+    
+            // Coleta dos dados gerais
+            const date = document.getElementById('date').value;
+            const location = document.getElementById('location').value;
+            const responsibleName = document.getElementById('responsibleName').value;
+            const userEmail = document.getElementById('userEmail').value;
+    
+            // Coleta das respostas (já tratando undefined como null)
+            const answers = getFormAnswers();
+    
+            // Validação das respostas obrigatórias
+            if (!answers.q1 || !answers.q2 || !answers.q3) {
+                alert("Por favor, responda todas as perguntas principais.");
+                return;
+            }
+    
+            if (answers.q1 === "Sim" && (!answers.q1_1 || !answers.q1_2)) {
+                alert("Por favor, responda todas as perguntas sobre vítimas.");
+                return;
+            }
+    
+            if (answers.q2 === "Sim" && (!answers.q2_1 || !answers.q2_2)) {
+                alert("Por favor, responda todas as perguntas sobre danos estruturais.");
+                return;
+            }
+    
+            if (answers.q3 === "Sim" && !answers.q3_1) {
+                alert("Por favor, informe qual regra de ouro foi descumprida.");
+                return;
+            }
+    
+            // Chama a função para salvar no Firebase
+            const { occurrenceType, level, actionPlan } = classifyOccurrence(answers);
+            saveOccurrenceData(date, location, responsibleName, userEmail, answers, occurrenceType, level, actionPlan);
+        });
+    </script>
+    
+</body>
+</html>

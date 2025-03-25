@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de RD</title>
+    <link rel="stylesheet" href="chckgeral.css">
+</head>
+<body>
+    <div class="form-container">
+        <h1>Checklist de RD</h1>
+        <form id="rdForm">
+            <label for="rdDate">Data e Hora:</label>
+            <input type="datetime-local" id="rdDate" required readonly>
+
+            <label for="unit">Unidade:</label>
+            <select id="unit" required>
+                <option value="">Selecione uma unidade</option>
+                <option value="FABRICA LIMEIRA">Fábrica Limeira</option>
+                <option value="CD CARIACICA">CD Cariacica</option>
+                <option value="FABRICA BELEM">Fábrica Belém</option>
+            </select>
+
+            <label for="shift">Turno:</label>
+            <select id="shift" required>
+                <option value="manhã">Manhã</option>
+                <option value="tarde">Tarde</option>
+                <option value="noite">Noite</option>
+            </select>
+
+            <label for="responsible">Responsável:</label>
+            <input type="text" id="responsible" required>
+
+            <label for="attended">Número de Pessoas Presentes:</label>
+            <input type="number" id="attended" required min="0">
+
+            <label for="absent">Número de Pessoas Faltantes:</label>
+            <input type="number" id="absent" required min="0">
+
+            <label for="replacementCount">Número de Pessoas que vão Repor:</label>
+            <input type="number" id="replacementCount" min="0" value="0">
+
+            <label for="replacementHours">Horas que vão Repor:</label>
+            <select id="replacementHours">
+                <option value="2">2 horas</option>
+                <option value="4">4 horas</option>
+            </select>
+
+            <div class="result-box">
+                <strong>Cálculo de Reposição:</strong>
+                <div id="replacementCalculation">0 horas</div>
+                <div id="totalHoursDisplay">Total: 0 horas</div>
+                <div id="holidayInfo"></div>
+            </div>
+
+            <label for="comments">Observações:</label>
+            <textarea id="comments" rows="4"></textarea>
+            
+            <label for="photo">Foto (opcional):</label>
+            <input type="file" id="photo" accept="image/*">
+            <img id="imagePreview">
+            
+            <button type="submit">Enviar</button>
+        </form>
+
+        <button class="back-button" onclick="window.location.href = '/pages/HOME/HOME.html';">Voltar ao Dashboard</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.appspot.com",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        let imageBase64 = null;
+        let totalCalculatedHours = 0;
+        let appliedPercentage = 0;
+        let isSpecialDay = false;
+
+        // Feriados nacionais do Brasil
+        const brazilianHolidays = [
+            "01-01", // Ano Novo
+            "04-21", // Tiradentes
+            "05-01", // Dia do Trabalho
+            "09-07", // Independência
+            "10-12", // Nossa Senhora Aparecida
+            "11-02", // Finados
+            "11-15", // Proclamação da República
+            "12-25"  // Natal
+        ];
+
+        function isHoliday(date) {
+            const monthDay = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            return brazilianHolidays.includes(monthDay);
+        }
+
+        function getBrazilianDateTime() {
+            const now = new Date();
+            const localOffset = now.getTimezoneOffset();
+            const brasilOffset = -180;
+            const diff = (brasilOffset + localOffset) * 60000;
+            return new Date(now.getTime() + diff);
+        }
+
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function calculateReplacement() {
+            const replacementCount = parseInt(document.getElementById('replacementCount').value) || 0;
+            const replacementHours = parseInt(document.getElementById('replacementHours').value) || 2;
+            const currentDate = new Date(document.getElementById('rdDate').value);
+            
+            const isSunday = currentDate.getDay() === 0;
+            const isHolidayToday = isHoliday(currentDate);
+            const baseHours = replacementCount * replacementHours;
+            
+            isSpecialDay = isSunday || isHolidayToday;
+            
+            if (isSpecialDay) {
+                appliedPercentage = 100;
+                totalCalculatedHours = baseHours;
+                document.getElementById('replacementCalculation').textContent = `${baseHours} horas + 100%`;
+                document.getElementById('holidayInfo').innerHTML = `<span class="warning">⚠️ ${isHolidayToday ? "Feriado nacional" : "Domingo"} - 100% de acréscimo</span>`;
+            } else {
+                appliedPercentage = 50;
+                totalCalculatedHours = baseHours;
+                document.getElementById('replacementCalculation').textContent = `${baseHours} horas + 50%`;
+                document.getElementById('holidayInfo').textContent = "Dia comum - 50% de acréscimo";
+            }
+            
+            document.getElementById('totalHoursDisplay').textContent = `Total: ${totalCalculatedHours} horas (${replacementCount} pessoas × ${replacementHours} horas)`;
+        }
+
+        function compressImage(file, maxWidth = 800, quality = 0.7) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const compressedData = canvas.toDataURL('image/jpeg', quality);
+                        resolve(compressedData);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Inicialização
+        document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+
+        // Event listeners
+        document.getElementById('replacementCount').addEventListener('input', calculateReplacement);
+        document.getElementById('replacementHours').addEventListener('change', calculateReplacement);
+        document.getElementById('rdDate').addEventListener('change', calculateReplacement);
+
+        document.getElementById('photo').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    const compressedImage = await compressImage(file);
+                    imageBase64 = compressedImage;
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = compressedImage;
+                    preview.style.display = 'block';
+                } catch (error) {
+                    console.error("Erro ao processar imagem:", error);
+                    alert("Erro ao processar a imagem. Por favor, tente novamente.");
+                }
+            }
+        });
+
+        document.getElementById('rdForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const rdDate = document.getElementById('rdDate').value;
+            const unit = document.getElementById('unit').value;
+            const shift = document.getElementById('shift').value;
+            const responsible = document.getElementById('responsible').value;
+            const attended = document.getElementById('attended').value;
+            const absent = document.getElementById('absent').value;
+            const replacementCount = document.getElementById('replacementCount').value;
+            const replacementHours = document.getElementById('replacementHours').value;
+            const comments = document.getElementById('comments').value;
+            const email = localStorage.getItem("userEmail") || "desconhecido";
+            const baseHours = replacementCount * replacementHours;
+
+            if (!rdDate || !unit || !responsible || !attended || !absent) {
+                alert("Por favor, preencha todos os campos obrigatórios.");
+                return;
+            }
+
+            try {
+                const reference = ref(database, 'rdRecords/');
+                const newRecordRef = push(reference);
+                
+                await set(newRecordRef, {
+                    rdDate,
+                    unit, // Novo campo adicionado
+                    shift,
+                    responsible,
+                    attended: parseInt(attended),
+                    absent: parseInt(absent),
+                    replacementCount: parseInt(replacementCount) || 0,
+                    replacementHours: parseInt(replacementHours) || 2,
+                    baseHours: parseInt(baseHours),
+                    appliedPercentage,
+                    totalHours: totalCalculatedHours,
+                    isSpecialDay,
+                    email,
+                    comments,
+                    photo: imageBase64 || "",
+                    timestamp: new Date().toISOString()
+                });
+
+                alert("Dados de RD enviados com sucesso!");
+                document.getElementById('rdForm').reset();
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+                document.getElementById('unit').value = ""; // Resetar a seleção da unidade
+                document.getElementById('replacementCount').value = 0;
+                imageBase64 = null;
+                calculateReplacement();
+            } catch (error) {
+                console.error("Erro ao salvar dados:", error);
+                alert("Ocorreu um erro ao enviar os dados. Por favor, tente novamente.");
+            }
+        });
+
+        // Calcular inicialmente
+        calculateReplacement();
+    </script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Limpeza</title>
+    <link rel="stylesheet" href="chckgeral.css">
+</head>
+<body>
+
+    <div class="form-container">
+        <h1>Formulário de Limpeza</h1>
+        <form id="cleaningForm">
+            <label for="cleaningDate">Data e Hora da Limpeza:</label>
+            <input type="datetime-local" id="cleaningDate" required>
+
+            <label for="location">Local:</label>
+            <input type="text" id="location" required>
+
+            <label for="cleanerName">Nome do Responsável pela Limpeza:</label>
+            <input type="text" id="cleanerName" required>
+
+            <label for="comments">Observações:</label>
+            <textarea id="comments" rows="4"></textarea>
+
+            <label for="cleaningType">Tipo de Limpeza:</label>
+            <select id="cleaningType">
+                <option value="geral">Geral</option>
+                <option value="intensa">Intensa</option>
+                <option value="leve">Leve</option>
+            </select>
+
+            <label for="duration">Duração Estimada (em minutos):</label>
+            <input type="number" id="duration" required>
+
+            <button type="submit">Enviar</button>
+        </form>
+
+        <button class="back-button" onclick="window.location.href = '/pages/HOME/HOME.html';">Voltar ao Dashboard</button>
+    </div>
+
+    <script type="module">
+        // Importando as funções necessárias do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com/",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.firebasestorage.app",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+
+        // Inicializando o Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Função para salvar dados de limpeza no Firebase
+        const saveCleaningData = (cleaningDate, location, cleanerName, email, comments, cleaningType, duration) => {
+            const reference = ref(database, 'cleaningRecords/'); // Caminho para os registros
+            const newRecordRef = push(reference); // Cria uma chave única para cada novo registro
+            set(newRecordRef, {
+                cleaningDate: cleaningDate,
+                location: location,
+                cleanerName: cleanerName,
+                email: email,
+                comments: comments,
+                cleaningType: cleaningType,
+                duration: duration
+            }).then(() => {
+                alert("Dados de limpeza enviados com sucesso!");
+            }).catch((error) => {
+                console.error("Erro ao salvar dados:", error);
+            });
+        };
+
+        // Adicionando evento ao formulário para capturar e enviar os dados
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById('cleaningForm');
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const cleaningDate = document.getElementById('cleaningDate').value;
+                const location = document.getElementById('location').value;
+                const cleanerName = document.getElementById('cleanerName').value;
+                const comments = document.getElementById('comments').value;
+                const cleaningType = document.getElementById('cleaningType').value;
+                const duration = document.getElementById('duration').value;
+
+                // Pega o e-mail do localStorage
+                const email = localStorage.getItem('userEmail'); // Aqui é onde você pega o e-mail
+
+                // Verificando se todos os campos obrigatórios foram preenchidos
+                if (cleaningDate && location && cleanerName && email && duration) {
+                    saveCleaningData(cleaningDate, location, cleanerName, email, comments, cleaningType, duration);
+                    form.reset(); // Reseta o formulário após o envio
+                } else {
+                    alert("Por favor, preencha todos os campos obrigatórios.");
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

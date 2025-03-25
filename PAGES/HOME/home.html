@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="home.css" />
+    <title>Painel Principal</title>
+    <style>
+      /* Estilos para a área do usuário no navbar */
+      .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        margin-right: 20px;
+      }
+      
+      .user-photo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-top: 5px;
+        border: 2px solid #fff;
+      }
+      
+      .user-photo-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .user-photo-placeholder i {
+        color: #999;
+        font-size: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="user-info">
+        <p>Bem-vindo! <span id="user-name"></span></p>
+        <img id="user-photo" class="user-photo" style="display: none;" />
+        <div id="user-photo-placeholder" class="user-photo-placeholder">
+          <i class="fas fa-user"></i>
+        </div>
+      </div>
+      <ul class="nav-links">
+        <li><a href="../HOME/home.html">Home</a></li>
+        <li><a href="../DASHBOARD/dashboard.html">Perfil</a></li>
+        <li class="has-submenu">
+          <a href="#" id="checklistToggle">Checklist ▾</a>
+          <ul class="submenu" id="checklistMenu">
+            <li><a href="../chck/limpeza.html">Checklist de Limpeza</a></li>
+            <li><a href="../chck/rd.html">Checklist de RD</a></li>
+            <li><a href="../chck/acidente.html">Acidente</a></li>
+          </ul>
+        </li>
+        <li><a href="../EXTRAÇÃO/EXTRAÇÃO.HTML">Extração</a></li>
+      </ul>
+    </div>
+
+    <div class="content">
+      <!-- Container para os dados de registros e gráficos -->
+      <div class="menu-container">
+        <h2>Resumo de Registros</h2>
+        <div class="menu-options" id="cleaningRecordsContainer">
+          <!-- Aqui será exibido o resumo dos registros -->
+        </div>
+
+        <!-- Card de total de registros -->
+        <div class="card">
+          <h3>Total de Check Aplicados</h3>
+          <p id="totalCheck">Carregando...</p>
+        </div>
+
+        <!-- Gráfico de contagem -->
+        <canvas id="recordChart" width="400" height="200"></canvas>
+      </div>
+
+      <!-- Container separado para a tabela de usuários -->
+      <div class="user-table-container">
+        <h3>Tabela de Usuários</h3>
+        <table id="userTable" border="1">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>E-mail</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <!-- Usuários serão listados aqui -->
+          </tbody>
+        </table>
+        <p id="userCount">Total de Usuários: 0</p>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+      import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+        authDomain: "application-gzl.firebaseapp.com",
+        databaseURL: "https://application-gzl-default-rtdb.firebaseio.com/",
+        projectId: "application-gzl",
+        storageBucket: "application-gzl.firebasestorage.app",
+        messagingSenderId: "319900903265",
+        appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+        measurementId: "G-ZRRFQZXT54"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
+      const auth = getAuth(app);
+
+      // Variável para armazenar o avatar aleatório gerado
+      let randomAvatarUrl = '';
+
+      // Função para gerar um número aleatório entre 1 e 99
+      const getRandomAvatarId = () => Math.floor(Math.random() * 99) + 1;
+
+      // Função para carregar o mesmo avatar aleatório
+      const loadRandomAvatar = () => {
+        const randomId = getRandomAvatarId();
+        randomAvatarUrl = `https://avatar.iran.liara.run/public/${randomId}`;
+        document.getElementById('user-photo').src = randomAvatarUrl;
+        document.getElementById('user-photo').style.display = 'block';
+        document.getElementById('user-photo-placeholder').style.display = 'none';
+      };
+
+      // Função para obter os registros de limpeza
+      const getCleaningRecords = async () => {
+        const cleaningRecordsRef = ref(database, 'cleaningRecords/');
+        const snapshot = await get(cleaningRecordsRef);
+        return snapshot.exists() ? snapshot.val() : {};
+      };
+
+      // Função para obter os registros de RD
+      const getRdRecords = async () => {
+        const rdRecordsRef = ref(database, 'rdRecords/');
+        const snapshot = await get(rdRecordsRef);
+        return snapshot.exists() ? snapshot.val() : {};
+      };
+
+      // Função para obter os registros de ocorrências
+      const getOccurrenceRecords = async () => {
+        const occurrenceRecordsRef = ref(database, 'occurrenceRecords/');
+        const snapshot = await get(occurrenceRecordsRef);
+        return snapshot.exists() ? snapshot.val() : {};
+      };
+
+      // Função para obter os usuários
+      const getUsers = async () => {
+        const usersRef = ref(database, 'users/');
+        const snapshot = await get(usersRef);
+        return snapshot.exists() ? snapshot.val() : {};
+      };
+
+      // Função para exibir o total de registros e o gráfico
+      const displayRecordsSummary = async () => {
+        const cleaningRecords = await getCleaningRecords();
+        const rdRecords = await getRdRecords();
+        const occurrenceRecords = await getOccurrenceRecords();
+        const users = await getUsers();
+
+        // Total de registros
+        const totalCleaning = Object.keys(cleaningRecords).length;
+        const totalRd = Object.keys(rdRecords).length;
+        const totalOccurrences = Object.keys(occurrenceRecords).length;
+        const totalCheck = totalCleaning + totalRd + totalOccurrences;
+
+        document.getElementById('totalCheck').innerText = `${totalCheck} registros`;
+
+        // Exibindo a tabela de usuários
+        const userTableBody = document.getElementById('userTableBody');
+        const userCount = document.getElementById('userCount');
+        userTableBody.innerHTML = ''; // Limpa a tabela antes de adicionar os novos usuários
+
+        Object.values(users).forEach(user => {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${user.fullName || user.email.split('@')[0]}</td><td>${user.email}</td>`;
+          userTableBody.appendChild(row);
+        });
+
+        userCount.innerText = `Total de Usuários: ${Object.keys(users).length}`;
+
+        // Preparar dados para o gráfico
+        const data = {
+          labels: ['Limpeza', 'RD', 'Ocorrências'],
+          datasets: [{
+            label: 'Quantidade de Registros',
+            data: [totalCleaning, totalRd, totalOccurrences],
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+            hoverBackgroundColor: ['#FF5733', '#4B9FD1', '#FFB347']
+          }]
+        };
+
+        // Criar gráfico
+        const ctx = document.getElementById('recordChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: data,
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      };
+
+      // Carregar os registros quando a página for carregada
+      document.addEventListener('DOMContentLoaded', () => {
+        displayRecordsSummary();
+      });
+
+      // Exibindo o nome do usuário e foto através do Firebase Auth
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const userEmail = user.email;
+          const userName = user.displayName || userEmail.split('@')[0]; // Pega apenas a parte antes do @
+          
+          localStorage.setItem("userEmail", userName);
+          document.getElementById('user-name').innerText = userName;
+
+          // Carregar avatar aleatório como padrão
+          loadRandomAvatar();
+
+          // Verificar se o usuário tem foto no banco de dados
+          const userRef = ref(database, `users/${user.uid}`);
+          onValue(userRef, (snapshot) => {
+            const userData = snapshot.val();
+            if (userData && userData.profilePicture) {
+              // Se existir foto no banco, substitui o avatar aleatório
+              document.getElementById('user-photo').src = 'data:image/jpeg;base64,' + userData.profilePicture;
+              document.getElementById('user-photo').style.display = 'block';
+              document.getElementById('user-photo-placeholder').style.display = 'none';
+            }
+          });
+        } else {
+          document.getElementById('user-name').innerText = "Visitante";
+        }
+      });
+
+      // Garantir que o submenu venha fechado ao carregar a página
+      document.addEventListener('DOMContentLoaded', () => {
+        const submenu = document.getElementById('checklistMenu');
+        submenu.style.display = 'none'; // Deixa o submenu fechado ao carregar
+      });
+
+      // Lógica do submenu de checklist
+      document.getElementById('checklistToggle').addEventListener('click', (event) => {
+        event.preventDefault();
+        const submenu = document.getElementById('checklistMenu');
+        // Alterna a exibição do submenu
+        submenu.style.display = submenu.style.display === 'none' ? 'block' : 'none';
+      });
+
+      // Fechar o submenu se clicar fora dele
+      document.addEventListener("click", function (event) {
+        const checklistToggle = document.getElementById("checklistToggle");
+        const submenu = document.getElementById("checklistMenu");
+
+        if (!checklistToggle.contains(event.target) && !submenu.contains(event.target)) {
+          submenu.style.display = "none"; // Fecha o submenu se clicar fora dele
+        }
+      });
+    </script>
+  </body>
+</html>

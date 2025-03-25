@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registros de RD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="icon" href="img/social-media.gif" type="image/x-icon">
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --background-color: #f5f5f5;
+            --card-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+            --warning-color: #fbbc05;
+            --danger-color: #ea4335;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .records-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .record-card {
+            background-color: var(--card-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .record-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .info-value {
+            text-align: right;
+        }
+
+        .highlight {
+            font-weight: 500;
+            color: var(--secondary-color);
+        }
+
+        .warning-highlight {
+            font-weight: 500;
+            color: var(--warning-color);
+        }
+
+        .danger-highlight {
+            font-weight: 500;
+            color: var(--danger-color);
+        }
+
+        .photo-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .record-photo {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+        }
+
+        .total-team {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 50px 0;
+            color: var(--primary-color);
+        }
+
+        .no-records {
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 50px 0;
+            color: var(--text-color);
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 768px) {
+            .records-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .filters {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            background-color: var(--card-color);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 220px;
+            position: relative;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background-color: var(--card-color);
+            color: var(--text-color);
+        }
+
+        .filter-group input:focus, .filter-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+        }
+
+        .filter-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 1em;
+        }
+
+        .filter-group::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .filter-group:focus-within::after {
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .filters {
+                padding: 15px;
+                gap: 15px;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Registros de RD</h1>
+        <p>Histórico completo das reuniões diárias</p>
+    </div>
+
+    <div class="filters">
+        <div class="filter-group">
+            <label for="unitFilter">Filtrar por Unidade:</label>
+            <select id="unitFilter">
+                <option value="">Todas as unidades</option>
+                <option value="FABRICA LIMEIRA">Fábrica Limeira</option>
+                <option value="CD CARIACICA">CD Cariacica</option>
+                <option value="FABRICA BELEM">Fábrica Belém</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="dateFilter">Filtrar por Data:</label>
+            <input type="date" id="dateFilter">
+        </div>
+    </div>
+
+    <div class="records-container" id="recordsContainer">
+        <div class="loading">Carregando registros...</div>
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.firebasestorage.app",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+    
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+    
+        // Format date for display
+        function formatDisplayDate(dateTimeString) {
+            const date = new Date(dateTimeString);
+            return date.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    
+        // Format date for comparison (YYYY-MM-DD)
+        function formatDateForComparison(dateTimeString) {
+            const date = new Date(dateTimeString);
+            return date.toISOString().split('T')[0];
+        }
+    
+        // Capitalize first letter
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+    
+        // Calculate effective absentees
+        function calculateEffectiveAbsent(record) {
+            const absent = parseInt(record.absent) || 0;
+            const replacementCount = parseInt(record.replacementCount) || 0;
+            return Math.max(0, absent - replacementCount);
+        }
+    
+        // Calculate total team (Presentes + Faltantes)
+        function calculateTotalTeam(record) {
+            const attended = parseInt(record.attended) || 0;
+            const replacementCount = parseInt(record.replacementCount) || 0;
+            return attended + replacementCount;
+        }
+    
+        // Format hours information (com ajuste para usar totalHours)
+        function formatHoursInfo(record) {
+            if (record.replacementCount && record.replacementHours) {
+                const baseHours = record.baseHours || record.replacementCount * record.replacementHours;
+                const percentage = record.appliedPercentage || (record.isSpecialDay ? 100 : 50);
+                const totalHours = record.totalHours || baseHours * (percentage === 100 ? 2 : 1.5);
+                
+                // Cálculo das horas ajustado conforme solicitado
+                const absent = parseInt(record.absent) || 0;
+                const horasPerdidas = absent * 8;
+                const horasRepostas = totalHours; // Usando o total de horas (20 horas)
+                const resultadoHoras = horasPerdidas - horasRepostas;
+                
+                return `
+                    <div class="info-row">
+                        <span class="info-label">Pessoas que vão repor:</span>
+                        <span class="info-value warning-highlight">${record.replacementCount}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Horas perdidas:</span>
+                        <span class="info-value danger-highlight">${horasPerdidas} horas (${absent} faltas × 8h)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Horas repostas:</span>
+                        <span class="info-value highlight">${horasRepostas} horas</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Resultado das horas:</span>
+                        <span class="info-value ${resultadoHoras > 0 ? 'danger-highlight' : 'highlight'}">
+                            ${resultadoHoras} horas (${horasPerdidas}h - ${horasRepostas}h)
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Horas por pessoa:</span>
+                        <span class="info-value">${record.replacementHours} horas</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Total de horas:</span>
+                        <span class="info-value highlight">${totalHours} horas (${percentage}%)</span>
+                    </div>
+                `;
+            }
+            return '';
+        }
+    
+        // Filter and sort records
+        function processRecords(data, unitFilter, dateFilter) {
+            if (!data) return [];
+            
+            return Object.entries(data)
+                .map(([key, record]) => ({ key, ...record }))
+                .filter(record => {
+                    // Filter by unit if specified
+                    const unitMatch = !unitFilter || 
+                        (record.unit && record.unit.toUpperCase() === unitFilter.toUpperCase());
+                    
+                    // Filter by date if specified
+                    const dateMatch = !dateFilter || 
+                        formatDateForComparison(record.rdDate) === dateFilter;
+                    
+                    return unitMatch && dateMatch;
+                })
+                .sort((a, b) => new Date(b.rdDate) - new Date(a.rdDate)); // Sort by date (newest first)
+        }
+    
+        // Display records
+        function displayRecords(filteredRecords) {
+            const recordsContainer = document.getElementById('recordsContainer');
+            recordsContainer.innerHTML = '';
+    
+            if (filteredRecords.length === 0) {
+                recordsContainer.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
+                return;
+            }
+    
+            filteredRecords.forEach(record => {
+                const effectiveAbsent = calculateEffectiveAbsent(record);
+                const totalTeam = calculateTotalTeam(record);
+                
+                const recordCard = document.createElement('div');
+                recordCard.className = 'record-card';
+                recordCard.innerHTML = `
+                    <div class="card-header">
+                        ${formatDisplayDate(record.rdDate)} - ${record.unit || 'Sem unidade'}
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">Unidade:</span>
+                            <span class="info-value">${record.unit || 'Não informado'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Turno:</span>
+                            <span class="info-value">${capitalizeFirstLetter(record.shift)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Responsável:</span>
+                            <span class="info-value">${record.responsible}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Presentes:</span>
+                            <span class="info-value highlight">${record.attended}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Faltantes:</span>
+                            <span class="info-value danger-highlight">${record.absent}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Faltantes efetivos:</span>
+                            <span class="info-value ${effectiveAbsent > 0 ? 'danger-highlight' : 'highlight'}">
+                                ${effectiveAbsent} (${record.absent} - ${record.replacementCount || 0})
+                            </span>
+                        </div>
+                        
+                        ${formatHoursInfo(record)}
+                        
+                        ${record.comments ? `
+                        <div class="info-row">
+                            <span class="info-label">Observações:</span>
+                            <span class="info-value">${record.comments}</span>
+                        </div>` : ''}
+                        
+                        ${record.photo ? `
+                        <div class="photo-container">
+                            <img src="${record.photo}" alt="Foto do RD" class="record-photo">
+                        </div>` : ''}
+                        
+                        <div class="total-team">
+                            Total do Time: ${totalTeam} pessoas
+                            <br>
+                            (Presentes: ${record.attended} + Reposição: ${record.replacementCount})
+                        </div>
+                    </div>
+                `;
+                
+                recordsContainer.appendChild(recordCard);
+            });
+        }
+    
+        // Fetch and load records
+        function loadRecords() {
+            const recordsRef = ref(database, 'rdRecords/');
+            const unitFilter = document.getElementById('unitFilter');
+            const dateFilter = document.getElementById('dateFilter');
+    
+            // Function to apply filters
+            const applyFilters = () => {
+                onValue(recordsRef, (snapshot) => {
+                    const data = snapshot.val();
+                    const filteredRecords = processRecords(
+                        data, 
+                        unitFilter.value, 
+                        dateFilter.value
+                    );
+                    displayRecords(filteredRecords);
+                }, {
+                    onlyOnce: false
+                });
+            };
+    
+            // Initial load
+            applyFilters();
+    
+            // Add event listeners for filters
+            unitFilter.addEventListener('change', applyFilters);
+            dateFilter.addEventListener('change', applyFilters);
+        }
+    
+        // Load records when page loads
+        window.addEventListener('DOMContentLoaded', loadRecords);
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+
+
+
+pergunta 1 houve vitimas
+
+sim ou não 
+
+Se ouve vitimas trazer as peguntas 
+
+1.1 houve  nescessidaade de atewndimento medico 
+
+(sim ou não) = sim : cair no minimo nivel 2 
+
+1.2 Classifique o tipo de lesão conforme visto
+
+superficial,provavelmente coloborador ira volta as atividades apos atendimento medico = nivel 2
+moderada,sera nescessario uma invetigação ,medic para saaber o tipo de tratamento = nivel 3
+alto,é provavel que aja um nescssidade de tratativa medica ampla = nivel 5
+
+pergunta 2 houve danos a estrutura, 
+
+(sim ou não )
+
+se sim trazer as perguntas 
+
+2.1 danos vão ter custo para a gzl (sim ou não) sim : cair no minimo nivel 2 
+
+2.2 na sua avaliação, qual seria o nivel de dano a estrutura
+
+nivel 1 , danos superficial com pequenos reparos e custo baixo = nivel 2
+nivel 2, danos intermediario com raparos e custo moderado = nivel 3
+nivel 3 , grandes danos, provabilidade de alto custo para reparo ou subtituição =nivel 4 
+
+perguntas 3 tivemos algum desconpriemnto da regraa de ouro (sim ou não )
+
+se sim 
+
+trazerr a pergunta 
+
+
+3.1 qual, *lista de selaçaõ para facilitar*
+
+1.trabalho em altura 
+2.mão em maquinas em movimento 
+3.alcools e drogas 
+4.acessoa espaço restrito 
+5.carga suspensa
+6.espaço confinado 
+7.susbtancvias pergisosas
+8.liberação de trabalho 
+9.bloqueio de fonte de energia 
+
+nivel 1 = Ações recomendadas: apenas danos estruturais, de baixo impacto, Nenhuma ação imediata necessária.
+nivel 2 = Ações recomendadas: Análise da equipe de segurança. Ajustes nos procedimentos operacionais.
+nivel 3 = Ações recomendadas: Investigação detalhada. Implementação de medidas corretivas. Treinamento adicional.
+nivel 4 = Ações recomendadas: Ações imediatas necessárias. Paralisação da área afetada. Revisão completa dos processos.
+nivel 5 = Ações recomendadas: Emergência. Ativação do plano de contingência. Envolvimento da alta gestão. Notificação às autoridades competentes.
+
+
+
+
+
+
+
