@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de Ocorrências</title>
+    <style>
+        /* Reset básico */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    
+        /* Corpo da página */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+    
+        /* Container do formulário */
+        .form-container {
+            max-width: 700px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        /* Títulos */
+        h1, h2, h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+    
+        /* Labels */
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 15px;
+            color: #555;
+        }
+    
+        /* Inputs, selects e textareas */
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+    
+        input:focus, select:focus, textarea:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+    
+        /* Grupo de botões */
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    
+        /* Botões */
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+    
+        /* Botão principal */
+        .submit-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+    
+        .submit-button:hover {
+            background-color: #45a049;
+        }
+    
+        /* Botão de voltar */
+        .back-button {
+            background-color: #f44336;
+            color: white;
+        }
+    
+        .back-button:hover {
+            background-color: #d32f2f;
+        }
+    
+        /* Seções condicionais */
+        .conditional-questions {
+            margin-left: 20px;
+            border-left: 3px solid #ccc;
+            padding-left: 15px;
+            margin-top: 15px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            padding: 10px;
+        }
+    
+        /* Estilo de imagens e câmera */
+        #cameraPreview, #capturedImage, #damageCameraPreview, #damagePhotoPreview, 
+        #headCameraPreview, #headPhotoPreview {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+    
+        #capturedImage, #damagePhotoPreview, #headPhotoPreview {
+            display: none;
+        }
+    
+        /* Seções especiais */
+        .photo-section, .body-region, .damage-section, .occurrence-details {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+        }
+    
+        .photo-section {
+            background-color: #e6f7ff;
+        }
+    
+        .body-region {
+            background-color: #f9f9f9;
+        }
+    
+        .damage-section {
+            background-color: #fff4e6;
+        }
+    
+        .occurrence-details {
+            background-color: #f0f7ff;
+        }
+    
+        /* Campos obrigatórios */
+        .required:after {
+            content: " *";
+            color: red;
+        }
+    
+        /* Esconde elementos */
+        .hidden {
+            display: none;
+        }
+        
+        /* Estilo para os radio buttons */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+        }
+        
+        .radio-option input[type="radio"],
+        .radio-option input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .radio-option label {
+            margin-top: 0;
+            font-weight: normal;
+        }
+
+        /* Estilo para lista de equipamentos */
+        .equipment-list {
+            margin-top: 10px;
+        }
+
+        .equipment-item {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .equipment-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>COMUNICAÇÃO DE OCORRÊNCIA</h1>
+        <form id="occurrenceForm">
+            <!-- Dados Gerais -->
+            <label for="occurrenceDate" class="required">Data da ocorrência:</label>
+            <input type="date" id="occurrenceDate" required>
+            
+            <label for="occurrenceTime" class="required">Hora da ocorrência:</label>
+            <input type="time" id="occurrenceTime" required>
+            <!-- NOVA SEÇÃO ADICIONADA AQUI -->
+<div class="employee-info">
+    <h3>Dados do Colaborador</h3>
+    
+    <label for="employeeName" class="required">Nome do colaborador:</label>
+    <input type="text" id="employeeName" required>
+
+    <label for="employeeAge" class="required">Idade:</label>
+    <input type="number" id="employeeAge" min="18" max="70" required>
+
+    <label for="workSchedule" class="required">Jornada de trabalho:</label>
+    <select id="workSchedule" required>
+        <option value="">Selecione</option>
+        <option value="Diurna">Diurna</option>
+        <option value="Noturna">Noturna</option>
+        <option value="Mista">Mista</option>
+        <option value="Horário Flexível">Horário Flexível</option>
+    </select>
+</div>
+
+<label class="required">Tipo de ocorrência:</label>
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="noVictims" name="occurrenceType" value="Ocorrência sem vítimas" required>
+                    <label for="noVictims">Ocorrência sem vítimas</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="withVictims" name="occurrenceType" value="Ocorrência com vítimas">
+                    <label for="withVictims">Ocorrência com vítimas</label>
+                </div>
+            </div>
+
+            <!-- Seção de Detalhes da Ocorrência (aparece em ambos os tipos) -->
+            <div class="occurrence-details">
+                <h3>Detalhes da Ocorrência</h3>
+                
+                <label for="occurrenceNature" class="required">Natureza da Ocorrência:</label>
+                <select id="occurrenceNature" required>
+                    <option value="">Selecione a natureza</option>
+                    <option value="Queda">Queda</option>
+                    <option value="Colisão">Colisão</option>
+                    <option value="Incêndio">Incêndio</option>
+                    <option value="Acidente com veículo">Acidente com veículo</option>
+                    <option value="Queda de objeto">Queda de objeto</option>
+                    <option value="Problema elétrico">Problema elétrico</option>
+                    <option value="Outro">Outro (especificar)</option>
+                </select>
+                
+                <div id="otherNatureDetails" class="conditional-questions hidden">
+                    <label for="otherNature">Especifique a natureza:</label>
+                    <input type="text" id="otherNature">
+                </div>
+                
+                <label for="occurrenceDescription" class="required">Descrição detalhada do ocorrido:</label>
+                <textarea id="occurrenceDescription" rows="4" required></textarea>
+                
+                <label>Envolveu veículo?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="vehicleYes" name="vehicleInvolved" value="Sim">
+                        <label for="vehicleYes">Sim</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="vehicleNo" name="vehicleInvolved" value="Não" checked>
+                        <label for="vehicleNo">Não</label>
+                    </div>
+                </div>
+                
+                <div id="vehicleDetails" class="conditional-questions hidden">
+                    <label for="vehicleType">Tipo de veículo:</label>
+                    <select id="vehicleType">
+                        <option value="">Selecione o tipo</option>
+                        <option value="Automóvel">Automóvel</option>
+                        <option value="Caminhão">Caminhão</option>
+                        <option value="Moto">Moto</option>
+                        <option value="Empilhadeira">Empilhadeira</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    
+                    <label for="vehiclePlate">Placa (se aplicável):</label>
+                    <input type="text" id="vehiclePlate" placeholder="AAA-0000">
+                    
+                    <label for="vehicleDamage">Danos no veículo:</label>
+                    <textarea id="vehicleDamage" rows="2"></textarea>
+                </div>
+            </div>
+
+            <!-- Seção para vítimas (condicional) -->
+            <div id="victimSection" class="conditional-questions hidden">
+                <h3>Dados da Vítima</h3>
+                
+                <label class="required">Colaborador é Fixo ou Intermitente?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="employeeFixed" name="employeeType" value="Fixo">
+                        <label for="employeeFixed">Fixo</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="employeeIntermittent" name="employeeType" value="Intermitente">
+                        <label for="employeeIntermittent">Intermitente</label>
+                    </div>
+                </div>
+
+                <label for="victimName" class="required">Nome do colaborador:</label>
+                <input type="text" id="victimName">
+
+                <label for="shift" class="required">Turno:</label>
+                <select id="shift" required>
+                    <option value="">Selecione o turno</option>
+                    <option value="Manhã">Manhã</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noite">Noite</option>
+                    <option value="Madrugada">Madrugada</option>
+                </select>
+
+                <label for="function" class="required">Função:</label>
+                <input type="text" id="function" required>
+
+                <label for="timeInFunction" class="required">Tempo na função:</label>
+                <select id="timeInFunction" required>
+                    <option value="">Selecione o tempo</option>
+                    <option value="Menos de 1 mês">Menos de 1 mês</option>
+                    <option value="1 a 6 meses">1 a 6 meses</option>
+                    <option value="6 meses a 1 ano">6 meses a 1 ano</option>
+                    <option value="1 a 3 anos">1 a 3 anos</option>
+                    <option value="Mais de 3 anos">Mais de 3 anos</option>
+                </select>
+
+                <label for="admissionDate" class="required">Data de Admissão:</label>
+                <input type="date" id="admissionDate" required>
+
+                <label for="victimAge" class="required">Idade da vítima:</label>
+                <input type="number" id="victimAge" min="18" max="70" required>
+
+                <label for="workJourney" class="required">Jornada Trabalhada:</label>
+                <select id="workJourney" required>
+                    <option value="">Selecione a jornada</option>
+                    <option value="Diurna">Diurna</option>
+                    <option value="Noturna">Noturna</option>
+                    <option value="Mista">Mista</option>
+                    <option value="Horário Flexível">Horário Flexível</option>
+                </select>
+
+                <label class="required">Região do corpo atingida:</label>
+                <div class="body-region">
+                    <div class="radio-option">
+                        <input type="checkbox" id="head" name="affectedRegion" value="Cabeça">
+                        <label for="head">Cabeça</label>
+                    </div>
+                    <div id="headDetails" class="conditional-questions hidden">
+                        <label>Especificação da Região Atingida da Cabeça:</label>
+                        <select id="headSpecification">
+                            <option value="">Selecione</option>
+                            <option value="Couro cabeludo">Couro cabeludo</option>
+                            <option value="Face">Face</option>
+                            <option value="Olhos">Olhos</option>
+                            <option value="Nariz">Nariz</option>
+                            <option value="Boca">Boca</option>
+                            <option value="Ouvidos">Ouvidos</option>
+                        </select>
+                        
+                        <label>Lado Atingido - Cabeça:</label>
+                        <select id="headSide">
+                            <option value="">Selecione</option>
+                            <option value="Direito">Direito</option>
+                            <option value="Esquerdo">Esquerdo</option>
+                            <option value="Ambos">Ambos</option>
+                            <option value="Frontal">Frontal</option>
+                            <option value="Posterior">Posterior</option>
+                        </select>
+                        
+                        <div class="photo-section">
+                            <button type="button" id="takeHeadPhoto">Tirar Foto da Cabeça</button>
+                            <video id="headCameraPreview" class="hidden"></video>
+                            <canvas id="headPhotoCanvas" class="hidden"></canvas>
+                            <img id="headPhotoPreview" class="hidden">
+                            <button type="button" id="retakeHeadPhoto" class="hidden">Tirar Novamente</button>
+                            <input type="hidden" id="headPhotoData">
+                        </div>
+                    </div>
+                    
+                    <!-- Membros Superiores -->
+                    <div class="radio-option">
+                        <input type="checkbox" id="upperLimbs" name="affectedRegion" value="Membros Superiores">
+                        <label for="upperLimbs">Membros Superiores</label>
+                    </div>
+                    <div id="upperLimbsDetails" class="conditional-questions hidden">
+                        <!-- Detalhes para membros superiores -->
+                        <label>Especificação:</label>
+                        <select>
+                            <option value="">Selecione</option>
+                            <option value="Braço direito">Braço direito</option>
+                            <option value="Braço esquerdo">Braço esquerdo</option>
+                            <option value="Antebraço direito">Antebraço direito</option>
+                            <option value="Antebraço esquerdo">Antebraço esquerdo</option>
+                            <option value="Mão direita">Mão direita</option>
+                            <option value="Mão esquerda">Mão esquerda</option>
+                        </select>
+                        
+                        <div class="photo-section">
+                            <button type="button" class="takePhotoBtn">Tirar Foto</button>
+                            <!-- Elementos da câmera seriam adicionados aqui -->
+                        </div>
+                    </div>
+                    
+                    <!-- Membros Inferiores -->
+                    <div class="radio-option">
+                        <input type="checkbox" id="lowerLimbs" name="affectedRegion" value="Membros Inferiores">
+                        <label for="lowerLimbs">Membros Inferiores</label>
+                    </div>
+                    <div id="lowerLimbsDetails" class="conditional-questions hidden">
+                        <!-- Detalhes para membros inferiores -->
+                        <label>Especificação:</label>
+                        <select>
+                            <option value="">Selecione</option>
+                            <option value="Perna direita">Perna direita</option>
+                            <option value="Perna esquerda">Perna esquerda</option>
+                            <option value="Joelho direito">Joelho direito</option>
+                            <option value="Joelho esquerdo">Joelho esquerdo</option>
+                            <option value="Pé direito">Pé direito</option>
+                            <option value="Pé esquerdo">Pé esquerdo</option>
+                        </select>
+                        
+                        <div class="photo-section">
+                            <button type="button" class="takePhotoBtn">Tirar Foto</button>
+                            <!-- Elementos da câmera seriam adicionados aqui -->
+                        </div>
+                    </div>
+                    
+                    <!-- Tórax -->
+                    <div class="radio-option">
+                        <input type="checkbox" id="thorax" name="affectedRegion" value="Tórax">
+                        <label for="thorax">Tórax</label>
+                    </div>
+                    <div id="thoraxDetails" class="conditional-questions hidden">
+                        <!-- Detalhes para tórax -->
+                        <label>Especificação:</label>
+                        <select>
+                            <option value="">Selecione</option>
+                            <option value="Parte superior">Parte superior</option>
+                            <option value="Parte inferior">Parte inferior</option>
+                            <option value="Lado direito">Lado direito</option>
+                            <option value="Lado esquerdo">Lado esquerdo</option>
+                        </select>
+                        
+                        <div class="photo-section">
+                            <button type="button" class="takePhotoBtn">Tirar Foto</button>
+                            <!-- Elementos da câmera seriam adicionados aqui -->
+                        </div>
+                    </div>
+                    
+                    <!-- Dorsal -->
+                    <div class="radio-option">
+                        <input type="checkbox" id="dorsal" name="affectedRegion" value="Dorsal">
+                        <label for="dorsal">Dorsal</label>
+                    </div>
+                    <div id="dorsalDetails" class="conditional-questions hidden">
+                        <!-- Detalhes para dorsal -->
+                        <label>Especificação:</label>
+                        <select>
+                            <option value="">Selecione</option>
+                            <option value="Parte superior">Parte superior</option>
+                            <option value="Parte inferior">Parte inferior</option>
+                            <option value="Região lombar">Região lombar</option>
+                        </select>
+                        
+                        <div class="photo-section">
+                            <button type="button" class="takePhotoBtn">Tirar Foto</button>
+                            <!-- Elementos da câmera seriam adicionados aqui -->
+                        </div>
+                    </div>
+                    
+                    <!-- Pescoço -->
+                    <div class="radio-option">
+                        <input type="checkbox" id="neck" name="affectedRegion" value="Pescoço">
+                        <label for="neck">Pescoço</label>
+                    </div>
+                    <div id="neckDetails" class="conditional-questions hidden">
+                        <!-- Detalhes para pescoço -->
+                        <label>Lado Atingido:</label>
+                        <select>
+                            <option value="">Selecione</option>
+                            <option value="Frente">Frente</option>
+                            <option value="Lado direito">Lado direito</option>
+                            <option value="Lado esquerdo">Lado esquerdo</option>
+                            <option value="Nuca">Nuca</option>
+                        </select>
+                        
+                        <div class="photo-section">
+                            <button type="button" class="takePhotoBtn">Tirar Foto</button>
+                            <!-- Elementos da câmera seriam adicionados aqui -->
+                        </div>
+                    </div>
+                    
+                    <!-- Abdômen -->
+                    <div class="radio-option">
+                        <input type="checkbox" id="abdomen" name="affectedRegion" value="Abdômen">
+                        <label for="abdomen">Abdômen</label>
+                    </div>
+                    <div id="abdomenDetails" class="conditional-questions hidden">
+                        <!-- Detalhes para abdômen -->
+                        <label>Especificação:</label>
+                        <select>
+                            <option value="">Selecione</option>
+                            <option value="Superior direito">Superior direito</option>
+                            <option value="Superior esquerdo">Superior esquerdo</option>
+                            <option value="Inferior direito">Inferior direito</option>
+                            <option value="Inferior esquerdo">Inferior esquerdo</option>
+                        </select>
+                        
+                        <div class="photo-section">
+                            <button type="button" class="takePhotoBtn">Tirar Foto</button>
+                            <!-- Elementos da câmera seriam adicionados aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Danos Materiais (aparece em ambos os tipos) -->
+            <div class="damage-section">
+                <h3>Danos Materiais</h3>
+                
+                <label>Houve danos a equipamentos ou estruturas?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="damageYes" name="materialDamage" value="Sim">
+                        <label for="damageYes">Sim</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="damageNo" name="materialDamage" value="Não" checked>
+                        <label for="damageNo">Não</label>
+                    </div>
+                </div>
+                
+                <div id="damageDetails" class="conditional-questions hidden">
+                    <label>Equipamentos/estruturas danificados:</label>
+                    <div class="equipment-list">
+                        <div class="equipment-item">
+                            <input type="checkbox" id="equipment1" name="damagedItems" value="Computador">
+                            <label for="equipment1">Computador</label>
+                        </div>
+                        <div class="equipment-item">
+                            <input type="checkbox" id="equipment2" name="damagedItems" value="Máquina">
+                            <label for="equipment2">Máquina</label>
+                        </div>
+                        <div class="equipment-item">
+                            <input type="checkbox" id="equipment3" name="damagedItems" value="Ferramenta">
+                            <label for="equipment3">Ferramenta</label>
+                        </div>
+                        <div class="equipment-item">
+                            <input type="checkbox" id="equipment4" name="damagedItems" value="Estrutura física">
+                            <label for="equipment4">Estrutura física</label>
+                        </div>
+                        <div class="equipment-item">
+                            <input type="checkbox" id="equipment5" name="damagedItems" value="Outro">
+                            <label for="equipment5">Outro (especificar)</label>
+                            <input type="text" id="otherEquipment" class="hidden" style="margin-left: 10px; width: 60%;">
+                        </div>
+                    </div>
+                    
+                    <label for="damageDescription">Descrição dos danos:</label>
+                    <textarea id="damageDescription" rows="3"></textarea>
+                    
+                    <div class="photo-section">
+                        <label>Registro fotográfico dos danos:</label>
+                        <button type="button" id="takeDamagePhoto">Tirar Foto dos Danos</button>
+                        <video id="damageCameraPreview" class="hidden"></video>
+                        <canvas id="damagePhotoCanvas" class="hidden"></canvas>
+                        <img id="damagePhotoPreview" class="hidden">
+                        <button type="button" id="retakeDamagePhoto" class="hidden">Tirar Novamente</button>
+                        <input type="hidden" id="damagePhotoData">
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="submit-button">Enviar Ocorrência</button>
+                <button type="button" class="back-button" onclick="window.location.href = 'zhome.html';">Voltar</button>
+            </div>
+        </form>
+    </div>
+    <script type="module">
+        // Importando as funções necessárias do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com/",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.appspot.com",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+    
+        // Inicializando o Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+        // Gerar um ID único para a ocorrência
+        function generateOccurrenceID() {
+            return 'OC-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        }
+        
+        // Variáveis para controle da câmera
+        let currentCameraStream = null;
+        let currentPhotoCanvas = null;
+        let currentPhotoPreview = null;
+        let currentPhotoDataInput = null;
+        
+        // Função para iniciar a câmera
+        async function startCamera(videoElement) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement.srcObject = stream;
+                currentCameraStream = stream;
+                return true;
+            } catch (err) {
+                console.error("Erro ao acessar a câmera:", err);
+                alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
+                return false;
+            }
+        }
+        
+        // Função para parar a câmera
+        function stopCamera() {
+            if (currentCameraStream) {
+                currentCameraStream.getTracks().forEach(track => track.stop());
+                currentCameraStream = null;
+            }
+        }
+        
+        // Função para capturar foto
+        function capturePhoto(videoElement, canvasElement, previewElement, dataInput) {
+            const context = canvasElement.getContext('2d');
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            
+            // Comprimir a imagem e converter para base64
+            const quality = 0.7; // Qualidade de 70% para reduzir o tamanho
+            const imageData = canvasElement.toDataURL('image/jpeg', quality);
+            
+            previewElement.src = imageData;
+            dataInput.value = imageData;
+            
+            // Esconder o preview da câmera e mostrar a foto capturada
+            videoElement.classList.add('hidden');
+            previewElement.classList.remove('hidden');
+            
+            // Parar a câmera após a captura
+            stopCamera();
+            
+            return imageData;
+        }
+        
+        // Função para limpar objetos, transformando undefined em null
+        function cleanObject(obj) {
+            if (!obj) return null;
+            return Object.fromEntries(
+                Object.entries(obj).map(([key, value]) => [
+                    key, 
+                    value === undefined ? null : 
+                    (typeof value === 'object' && value !== null ? cleanObject(value) : value)
+                ])
+            );
+        }
+        
+        // Função para salvar dados de ocorrência no Firebase
+        async function saveOccurrenceData(occurrenceData) {
+            try {
+                // Gerar ID único para esta ocorrência
+                const occurrenceID = generateOccurrenceID();
+                occurrenceData.occurrenceID = occurrenceID;
+                occurrenceData.timestamp = Date.now();
+                
+                // Limpa o objeto antes de enviar
+                const cleanedData = cleanObject(occurrenceData);
+                
+                // Referência para o novo caminho no banco de dados
+                const reference = ref(database, 'DBrdeliminar/');
+                const newRecordRef = push(reference);
+                
+                // Salvar os dados
+                await set(newRecordRef, cleanedData);
+                
+                return occurrenceID;
+            } catch (error) {
+                console.error("Erro ao salvar ocorrência:", error);
+                throw error;
+            }
+        }
+        
+        // Event listeners quando o DOM estiver carregado
+        document.addEventListener("DOMContentLoaded", () => {
+            // Preencher data e hora atuais
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('occurrenceDate').value = today;
+            
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('occurrenceTime').value = `${hours}:${minutes}`;
+            
+            // Recupera dados do localStorage se existirem
+            const storedData = JSON.parse(localStorage.getItem('currentOccurrence'));
+            if (storedData) {
+                // Preenche campos com os dados armazenados (adaptar conforme necessário)
+                if (storedData.employee) {
+                    document.getElementById('employeeName').value = storedData.employee.name || '';
+                    document.getElementById('employeeAge').value = storedData.employee.age || '';
+                    document.getElementById('workSchedule').value = storedData.employee.workSchedule || '';
+                }
+            }
+            
+            // Mostrar/ocultar seção de vítimas conforme seleção
+            document.getElementById('noVictims').addEventListener('change', function() {
+                document.getElementById('victimSection').classList.add('hidden');
+                // Remover atributo required dos campos de vítima
+                document.querySelectorAll('#victimSection [required]').forEach(el => {
+                    el.removeAttribute('required');
+                });
+            });
+            
+            document.getElementById('withVictims').addEventListener('change', function() {
+                document.getElementById('victimSection').classList.remove('hidden');
+                // Adicionar atributo required nos campos de vítima
+                document.querySelectorAll('#victimSection [required]').forEach(el => {
+                    el.setAttribute('required', 'required');
+                });
+            });
+            
+            // Mostrar/ocultar detalhes das regiões do corpo
+            document.querySelectorAll('input[name="affectedRegion"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const detailsId = this.id + 'Details';
+                    document.getElementById(detailsId).classList.toggle('hidden', !this.checked);
+                });
+            });
+            
+            // Novo listener para natureza da ocorrência "Outro"
+            document.getElementById('occurrenceNature').addEventListener('change', function() {
+                document.getElementById('otherNatureDetails').classList.toggle('hidden', this.value !== 'Outro');
+            });
+            
+            // Listener para veículo envolvido
+            document.querySelectorAll('input[name="vehicleInvolved"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    document.getElementById('vehicleDetails').classlist.toggle('hidden', this.value !== 'Sim');
+                });
+            });
+            
+            // Listener para danos materiais
+            document.querySelectorAll('input[name="materialDamage"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    document.getElementById('damageDetails').classList.toggle('hidden', this.value !== 'Sim');
+                });
+            });
+            
+            // Listener para "Outro" equipamento danificado
+            document.getElementById('equipment5').addEventListener('change', function() {
+                document.getElementById('otherEquipment').classList.toggle('hidden', !this.checked);
+            });
+            
+            // Configurar botão de foto para cabeça
+            document.getElementById('takeHeadPhoto').addEventListener('click', async function() {
+                const videoElement = document.getElementById('headCameraPreview');
+                const canvasElement = document.getElementById('headPhotoCanvas');
+                const previewElement = document.getElementById('headPhotoPreview');
+                const dataInput = document.getElementById('headPhotoData');
+                
+                currentPhotoCanvas = canvasElement;
+                currentPhotoPreview = previewElement;
+                currentPhotoDataInput = dataInput;
+                
+                videoElement.classList.remove('hidden');
+                if (await startCamera(videoElement)) {
+                    this.style.display = 'none';
+                    document.getElementById('retakeHeadPhoto').classList.remove('hidden');
+                }
+            });
+            
+            document.getElementById('retakeHeadPhoto').addEventListener('click', function() {
+                const videoElement = document.getElementById('headCameraPreview');
+                const previewElement = document.getElementById('headPhotoPreview');
+                
+                previewElement.classList.add('hidden');
+                videoElement.classList.remove('hidden');
+                document.getElementById('takeHeadPhoto').style.display = 'inline-block';
+                this.classList.add('hidden');
+                
+                // Reiniciar a câmera
+                stopCamera();
+                startCamera(videoElement);
+            });
+            
+            // Configurar botão de foto para danos
+            document.getElementById('takeDamagePhoto').addEventListener('click', async function() {
+                const videoElement = document.getElementById('damageCameraPreview');
+                const canvasElement = document.getElementById('damagePhotoCanvas');
+                const previewElement = document.getElementById('damagePhotoPreview');
+                const dataInput = document.getElementById('damagePhotoData');
+                
+                currentPhotoCanvas = canvasElement;
+                currentPhotoPreview = previewElement;
+                currentPhotoDataInput = dataInput;
+                
+                videoElement.classList.remove('hidden');
+                if (await startCamera(videoElement)) {
+                    this.style.display = 'none';
+                    document.getElementById('retakeDamagePhoto').classList.remove('hidden');
+                }
+            });
+            
+            document.getElementById('retakeDamagePhoto').addEventListener('click', function() {
+                const videoElement = document.getElementById('damageCameraPreview');
+                const previewElement = document.getElementById('damagePhotoPreview');
+                
+                previewElement.classList.add('hidden');
+                videoElement.classList.remove('hidden');
+                document.getElementById('takeDamagePhoto').style.display = 'inline-block';
+                this.classList.add('hidden');
+                
+                stopCamera();
+                startCamera(videoElement);
+            });
+        });
+        
+        // Envio do formulário
+        document.getElementById('occurrenceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Verificar se é ocorrência com vítimas
+            const isVictimOccurrence = document.getElementById('withVictims').checked;
+            
+            // Coletar dados básicos
+            const occurrenceData = {
+                date: document.getElementById('occurrenceDate').value || null,
+                time: document.getElementById('occurrenceTime').value || null,
+                type: document.querySelector('input[name="occurrenceType"]:checked')?.value || null,
+                employee: {
+                    name: document.getElementById('employeeName').value || null,
+                    age: document.getElementById('employeeAge').value || null,
+                    workSchedule: document.getElementById('workSchedule').value || null
+                },
+                nature: document.getElementById('occurrenceNature').value || null,
+                description: document.getElementById('occurrenceDescription').value || null
+            };
+            
+            // Se natureza for "Outro", adicionar detalhes
+            if (occurrenceData.nature === 'Outro') {
+                occurrenceData.otherNature = document.getElementById('otherNature').value || null;
+            }
+            
+            // Se envolveu veículo
+            const vehicleInvolved = document.querySelector('input[name="vehicleInvolved"]:checked')?.value;
+            if (vehicleInvolved === 'Sim') {
+                occurrenceData.vehicle = {
+                    type: document.getElementById('vehicleType').value || null,
+                    plate: document.getElementById('vehiclePlate').value || null,
+                    damage: document.getElementById('vehicleDamage').value || null
+                };
+            }
+            
+            // Coletar dados de vítima apenas se for ocorrência com vítimas
+            if (isVictimOccurrence) {
+                occurrenceData.victim = {
+                    employeeType: document.querySelector('input[name="employeeType"]:checked')?.value || null,
+                    name: document.getElementById('victimName').value || null,
+                    shift: document.getElementById('shift').value || null,
+                    function: document.getElementById('function').value || null,
+                    timeInFunction: document.getElementById('timeInFunction').value || null,
+                    admissionDate: document.getElementById('admissionDate').value || null,
+                    age: document.getElementById('victimAge').value || null,
+                    workJourney: document.getElementById('workJourney').value || null,
+                    affectedRegions: []
+                };
+                
+                // Coletar informações sobre as regiões afetadas
+                document.querySelectorAll('input[name="affectedRegion"]:checked').forEach(checkbox => {
+                    const regionData = {
+                        region: checkbox.value || null,
+                        ...(checkbox.id === 'head' ? {
+                            specification: document.getElementById('headSpecification').value || null,
+                            side: document.getElementById('headSide').value || null,
+                            photo: document.getElementById('headPhotoData').value || null
+                        } : {})
+                    };
+                    
+                    occurrenceData.victim.affectedRegions.push(regionData);
+                });
+            } else {
+                occurrenceData.victim = null;
+            }
+            
+            // Coletar informações sobre danos materiais
+            const materialDamage = document.querySelector('input[name="materialDamage"]:checked')?.value;
+            if (materialDamage === 'Sim') {
+                occurrenceData.damages = {
+                    items: Array.from(document.querySelectorAll('input[name="damagedItems"]:checked')).map(el => el.value || null),
+                    description: document.getElementById('damageDescription').value || null,
+                    photo: document.getElementById('damagePhotoData').value || null
+                };
+                
+                if (document.getElementById('equipment5').checked) {
+                    occurrenceData.damages.otherItem = document.getElementById('otherEquipment').value || null;
+                }
+            }
+            
+            // Combinar com dados do localStorage se existirem
+            const storedData = JSON.parse(localStorage.getItem('currentOccurrence')) || {};
+            const completeData = {
+                ...storedData,
+                ...occurrenceData
+            };
+            
+            try {
+                // Salvar os dados no Firebase
+                const occurrenceID = await saveOccurrenceData(completeData);
+                
+                // Limpar localStorage após envio bem-sucedido
+                localStorage.removeItem('currentOccurrence');
+                
+                // Redirecionar com o ID da ocorrência
+                window.location.href = `zeliminar.html?occurrenceID=${occurrenceID}`;
+            } catch (error) {
+                alert("Ocorreu um erro ao salvar a ocorrência. Por favor, tente novamente.");
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -199,60 +199,76 @@
     </div>
 
     <script type="module">
-        // Importando as funções necessárias do Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-    
-        // Configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
-            authDomain: "application-gzl.firebaseapp.com",
-            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com/",
-            projectId: "application-gzl",
-            storageBucket: "application-gzl.firebasestorage.app",
-            messagingSenderId: "319900903265",
-            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
-            measurementId: "G-ZRRFQZXT54"
-        };
-    
-        // Inicializando o Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-    
-        // Função para salvar dados de ocorrência no Firebase
-        const saveOccurrenceData = (date, location, responsibleName, userEmail, answers, occurrenceType, level, actionPlan) => {
-            const reference = ref(database, 'occurrenceRecords/');
-            const newRecordRef = push(reference);
+        document.addEventListener("DOMContentLoaded", () => {
+            // Configurações iniciais
+            const now = new Date();
+            const timezoneOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+            document.getElementById('date').value = localISOTime;
             
-            set(newRecordRef, {
-                date: date,
-                location: location,
-                responsibleName: responsibleName,
-                userEmail: userEmail,
-                answers: answers,
-                occurrenceType: occurrenceType,
-                level: level,
-                actionPlan: actionPlan
-            }).then(() => {
-                alert("Dados de ocorrência enviados com sucesso!");
-            }).catch((error) => {
-                console.error("Erro ao salvar dados:", error);
-                alert("Erro ao enviar dados. Por favor, tente novamente.");
+            // Preenche o campo de e-mail do usuário logado
+            const userEmail = localStorage.getItem('userEmail');
+            if (userEmail) {
+                document.getElementById('userEmail').value = userEmail;
+            } else {
+                alert("Usuário não autenticado. Faça login novamente.");
+                window.location.href = "/login.html";
+            }
+            
+            // Mostrar/ocultar perguntas condicionais
+            document.getElementById('q1_sim').addEventListener('change', function() {
+                document.getElementById('victimQuestions').classList.toggle('hidden', !this.checked);
             });
+            document.getElementById('q1_nao').addEventListener('change', function() {
+                document.getElementById('victimQuestions').classList.toggle('hidden', this.checked);
+            });
+            
+            document.getElementById('q2_sim').addEventListener('change', function() {
+                document.getElementById('structureQuestions').classList.toggle('hidden', !this.checked);
+            });
+            document.getElementById('q2_nao').addEventListener('change', function() {
+                document.getElementById('structureQuestions').classList.toggle('hidden', this.checked);
+            });
+            
+            document.getElementById('q3_sim').addEventListener('change', function() {
+                document.getElementById('goldenRulesQuestions').classList.toggle('hidden', !this.checked);
+            });
+            document.getElementById('q3_nao').addEventListener('change', function() {
+                document.getElementById('goldenRulesQuestions').classList.toggle('hidden', this.checked);
+            });
+            
+            // Atualiza a classificação em tempo real
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('change', updateClassification);
+            });
+        });
+    
+        // Função para obter respostas do formulário
+        const getFormAnswers = () => {
+            return {
+                q1: document.querySelector('input[name="q1"]:checked')?.value || null,
+                q1_1: document.querySelector('input[name="q1_1"]:checked')?.value || null,
+                q1_2: document.querySelector('input[name="q1_2"]:checked')?.value || null,
+                q2: document.querySelector('input[name="q2"]:checked')?.value || null,
+                q2_1: document.querySelector('input[name="q2_1"]:checked')?.value || null,
+                q2_2: document.querySelector('input[name="q2_2"]:checked')?.value || null,
+                q3: document.querySelector('input[name="q3"]:checked')?.value || null,
+                q3_1: document.getElementById('q3_1')?.value || null
+            };
         };
     
-        // Função para classificar a ocorrência e determinar o nível
+        // Função para classificar a ocorrência
         const classifyOccurrence = (answers) => {
-            let level = 1; // Inicia com o nível mais baixo
+            let level = 1;
             let occurrenceType = "Outro tipo de ocorrência";
             let actionPlan = "Registro e monitoramento. Nenhuma ação imediata necessária.";
     
-            // Verifica se houve vítimas e classifica
             if (answers.q1 === "Sim") {
                 occurrenceType = "Ocorrência com vítimas";
                 
                 if (answers.q1_1 === "Sim") {
-                    level = Math.max(level, 2); // Mínimo nível 2 se houve atendimento médico
+                    level = Math.max(level, 2);
                 }
                 
                 if (answers.q1_2 === "Superficial") {
@@ -264,14 +280,13 @@
                 }
             }
     
-            // Verifica se houve danos estruturais e classifica
             if (answers.q2 === "Sim") {
                 occurrenceType = occurrenceType === "Outro tipo de ocorrência" 
                     ? "Ocorrência com danos estruturais" 
                     : occurrenceType + " e danos estruturais";
                 
                 if (answers.q2_1 === "Sim") {
-                    level = Math.max(level, 2); // Mínimo nível 2 se houve custo
+                    level = Math.max(level, 2);
                 }
                 
                 if (answers.q2_2 === "Nível 1") {
@@ -283,17 +298,14 @@
                 }
             }
     
-            // Verifica se houve descumprimento das regras de ouro
             if (answers.q3 === "Sim" && answers.q3_1) {
                 occurrenceType = occurrenceType === "Outro tipo de ocorrência" 
                     ? "Descumprimento das Regras de Ouro" 
                     : occurrenceType + " e descumprimento das Regras de Ouro";
                 
-                // Descumprimento de regras de ouro aumenta o nível de risco
-                level = Math.max(level, 3); // Mínimo nível 3 para descumprimento de regras de ouro
+                level = Math.max(level, 3);
             }
     
-            // Determina o plano de ação baseado no nível
             switch(level) {
                 case 1:
                     actionPlan = "Registro e monitoramento. Nenhuma ação imediata necessária.";
@@ -317,65 +329,6 @@
             return { occurrenceType, level, actionPlan };
         };
     
-        // Função para obter respostas do formulário, convertendo undefined para null
-        const getFormAnswers = () => {
-            return {
-                q1: document.querySelector('input[name="q1"]:checked')?.value || null,
-                q1_1: document.querySelector('input[name="q1_1"]:checked')?.value || null,
-                q1_2: document.querySelector('input[name="q1_2"]:checked')?.value || null,
-                q2: document.querySelector('input[name="q2"]:checked')?.value || null,
-                q2_1: document.querySelector('input[name="q2_1"]:checked')?.value || null,
-                q2_2: document.querySelector('input[name="q2_2"]:checked')?.value || null,
-                q3: document.querySelector('input[name="q3"]:checked')?.value || null,
-                q3_1: document.getElementById('q3_1')?.value || null
-            };
-        };
-    
-        // Atualiza a data e hora atual ao carregar a página
-        document.addEventListener("DOMContentLoaded", () => {
-            const now = new Date();
-            const timezoneOffset = now.getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
-            document.getElementById('date').value = localISOTime;
-            
-            // Preenche o campo de e-mail do usuário logado
-            const userEmail = localStorage.getItem('userEmail');
-            if (userEmail) {
-                document.getElementById('userEmail').value = userEmail;
-            } else {
-                alert("Usuário não autenticado. Faça login novamente.");
-                window.location.href = "/login.html";
-            }
-            
-            // Adiciona listeners para mostrar/ocultar perguntas condicionais
-            document.getElementById('q1_sim').addEventListener('change', function() {
-                document.getElementById('victimQuestions').classList.toggle('hidden', !this.checked);
-            });
-            document.getElementById('q1_nao').addEventListener('change', function() {
-                document.getElementById('victimQuestions').classList.toggle('hidden', this.checked);
-            });
-            
-            document.getElementById('q2_sim').addEventListener('change', function() {
-                document.getElementById('structureQuestions').classList.toggle('hidden', !this.checked);
-            });
-            document.getElementById('q2_nao').addEventListener('change', function() {
-                document.getElementById('structureQuestions').classList.toggle('hidden', this.checked);
-            });
-            
-            document.getElementById('q3_sim').addEventListener('change', function() {
-                document.getElementById('goldenRulesQuestions').classList.toggle('hidden', !this.checked);
-            });
-            document.getElementById('q3_nao').addEventListener('change', function() {
-                document.getElementById('goldenRulesQuestions').classList.toggle('hidden', this.checked);
-            });
-            
-            // Adiciona listeners para atualizar a classificação em tempo real
-            const inputs = document.querySelectorAll('input, select');
-            inputs.forEach(input => {
-                input.addEventListener('change', updateClassification);
-            });
-        });
-    
         // Atualiza a classificação da ocorrência em tempo real
         function updateClassification() {
             const answers = getFormAnswers();
@@ -387,7 +340,7 @@
             document.getElementById('actionPlan').textContent = `Ações recomendadas: ${actionPlan}`;
         }
     
-        // Adicionando evento ao formulário para capturar e enviar os dados
+        // Adicionando evento ao formulário para salvar no localStorage
         document.getElementById('occurrenceForm').addEventListener('submit', (e) => {
             e.preventDefault();
     
@@ -397,7 +350,7 @@
             const responsibleName = document.getElementById('responsibleName').value;
             const userEmail = document.getElementById('userEmail').value;
     
-            // Coleta das respostas (já tratando undefined como null)
+            // Coleta das respostas
             const answers = getFormAnswers();
     
             // Validação das respostas obrigatórias
@@ -421,11 +374,30 @@
                 return;
             }
     
-            // Chama a função para salvar no Firebase
+            // Classifica a ocorrência
             const { occurrenceType, level, actionPlan } = classifyOccurrence(answers);
-            saveOccurrenceData(date, location, responsibleName, userEmail, answers, occurrenceType, level, actionPlan);
+    
+            // Cria o objeto com todos os dados
+            const occurrenceData = {
+                date,
+                location,
+                responsibleName,
+                userEmail,
+                answers,
+                occurrenceType,
+                level,
+                actionPlan,
+                // Adiciona timestamp para controle
+                timestamp: new Date().toISOString()
+            };
+    
+            // Salva no localStorage
+            localStorage.setItem('currentOccurrence', JSON.stringify(occurrenceData));
+            
+            // Redireciona para a próxima página
+            window.location.href = "zeliminar.html";
         });
     </script>
-    
+
 </body>
 </html>

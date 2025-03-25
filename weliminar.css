@@ -1,0 +1,202 @@
+ /* [Manter todos os estilos anteriores] */
+           /* Reset básico */
+           * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    
+        /* Corpo da página */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+    
+        /* Container do formulário */
+        .form-container {
+            max-width: 700px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        /* Títulos */
+        h1, h2, h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+    
+        /* Labels */
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 15px;
+            color: #555;
+        }
+    
+        /* Inputs, selects e textareas */
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+    
+        input:focus, select:focus, textarea:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+    
+        /* Grupo de botões */
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    
+        /* Botões */
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+    
+        /* Botão principal */
+        .submit-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+    
+        .submit-button:hover {
+            background-color: #45a049;
+        }
+    
+        /* Botão de voltar */
+        .back-button {
+            background-color: #f44336;
+            color: white;
+        }
+    
+        .back-button:hover {
+            background-color: #d32f2f;
+        }
+    
+        /* Seções condicionais */
+        .conditional-questions {
+            margin-left: 20px;
+            border-left: 3px solid #ccc;
+            padding-left: 15px;
+            margin-top: 15px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            padding: 10px;
+        }
+    
+        /* Estilo de imagens e câmera */
+        #cameraPreview, #capturedImage {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+    
+        #capturedImage {
+            display: none;
+        }
+    
+        /* Seções especiais */
+        .photo-section, .body-region {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+        }
+    
+        .photo-section {
+            background-color: #e6f7ff;
+        }
+    
+        .body-region {
+            background-color: #f9f9f9;
+        }
+    
+        /* Campos obrigatórios */
+        .required:after {
+            content: " *";
+            color: red;
+        }
+    
+        /* Esconde elementos */
+        .hidden {
+            display: none;
+        }
+        
+        /* Estilo para os radio buttons */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+        }
+        
+        .radio-option input[type="radio"],
+        .radio-option input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .radio-option label {
+            margin-top: 0;
+            font-weight: normal;
+        }
+        /* Adicionais para as novas seções */
+        .damage-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff8e1;
+            border-radius: 6px;
+            border-left: 3px solid #ffc107;
+        }
+        
+        .occurrence-details {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 6px;
+            border-left: 3px solid #4caf50;
+        }
+        
+        .equipment-list {
+            margin-top: 10px;
+        }
+        
+        .equipment-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .equipment-item input[type="checkbox"] {
+            margin-right: 10px;
+            width: auto;
+        }
