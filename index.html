@@ -85,121 +85,68 @@
       const firebaseConfig = {
         apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
         authDomain: "application-gzl.firebaseapp.com",
-        databaseURL: "https://application-gzl-default-rtdb.firebaseio.com", // Adicione esta linha
         projectId: "application-gzl",
         storageBucket: "application-gzl.firebasestorage.app",
         messagingSenderId: "319900903265",
         appId: "1:319900903265:web:a8f400aeb7a697fc168720",
-        measurementId: "G-ZRRFQZXT54"
+        measurementId: "G-ZRRFQZXT54",
       };
 
       // Inicializa o Firebase
-      const app = firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      const database = firebase.database();
+      firebase.initializeApp(firebaseConfig);
 
-      // Verifica estado de autenticação
-      auth.onAuthStateChanged((user) => {
-        if (user && user.emailVerified) {
-          // Usuário logado e verificado
-          console.log("Usuário autenticado:", user.uid);
-        }
-      });
-
-      // Função de login melhorada
-      async function login() {
+      // Função de login
+      function login() {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
         const message = document.getElementById("message");
 
-        try {
-          const userCredential = await auth.signInWithEmailAndPassword(email, password);
-          const user = userCredential.user;
-          
-          if (user.emailVerified) {
+        firebase.auth().signInWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            const user = userCredential.user;
             message.style.color = "green";
-            message.textContent = "Login realizado com sucesso!";
-            
-            // Salva dados do usuário
-            localStorage.setItem("userEmail", user.email);
-            localStorage.setItem("userUID", user.uid);
-            
-            // Exemplo: Salva último login no Realtime Database
-            await database.ref('users/' + user.uid).update({
-              lastLogin: firebase.database.ServerValue.TIMESTAMP
-            });
-            
+            message.innerText = "Login realizado com sucesso!";
+            console.log("Usuário logado:", user);
+
+            // Armazena o e-mail no localStorage
+            localStorage.setItem("userEmail", email);
+
+            // Redireciona para a página 'dashboard.html' após o login
             window.location.href = 'home.html';
-          } else {
-            await auth.signOut();
+          })
+          .catch((error) => {
             message.style.color = "red";
-            message.textContent = "Por favor, verifique seu e-mail antes de fazer login.";
-          }
-        } catch (error) {
-          message.style.color = "red";
-          message.textContent = this.getLoginErrorMessage(error.code);
-        }
+            message.innerText = "Credenciais inválidas.";
+          });
       }
 
-      // Função para mensagens de erro
-      function getLoginErrorMessage(errorCode) {
-        const errors = {
-          "auth/invalid-email": "E-mail inválido",
-          "auth/user-disabled": "Conta desativada",
-          "auth/user-not-found": "Usuário não encontrado",
-          "auth/wrong-password": "Senha incorreta",
-          "auth/too-many-requests": "Muitas tentativas. Tente mais tarde."
-        };
-        return errors[errorCode] || "Erro ao fazer login";
-      }
-
-      // Função de cadastro melhorada
-      async function register() {
+      // Função de cadastro (sign up) com validação de senha de admin
+      function register() {
         const email = document.getElementById("sign-up-email").value;
         const password = document.getElementById("sign-up-password").value;
-        const adminPassword = document.getElementById("admin-password").value;
+        const adminPassword = document.getElementById("admin-password").value; // Senha de administrador
         const message = document.getElementById("sign-up-message");
 
         // Senha de administrador
         const adminPasswordCorrect = "123Qwetr@#$%";
 
-        if (adminPassword !== adminPasswordCorrect) {
+        // Verifica se a senha de administrador está correta
+        if (adminPassword === adminPasswordCorrect) {
+          firebase.auth().createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+              const user = userCredential.user;
+              message.style.color = "green";
+              message.innerText = "Cadastro realizado com sucesso!";
+              console.log("Usuário cadastrado:", user);
+            })
+            .catch((error) => {
+              message.style.color = "red";
+              message.innerText = "Erro: " + error.message;
+            });
+        } else {
           message.style.color = "red";
-          message.textContent = "Senha de administrador incorreta";
-          return;
+          message.innerText = "Senha de administrador incorreta. Cadastro negado.";
         }
-
-        try {
-          const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-          const user = userCredential.user;
-          
-          // Envia e-mail de verificação
-          await user.sendEmailVerification();
-          
-          // Salva dados adicionais do usuário
-          await database.ref('users/' + user.uid).set({
-            email: user.email,
-            createdAt: firebase.database.ServerValue.TIMESTAMP,
-            isAdmin: true
-          });
-          
-          message.style.color = "green";
-          message.textContent = "Cadastro realizado! Verifique seu e-mail.";
-        } catch (error) {
-          message.style.color = "red";
-          message.textContent = this.getRegisterErrorMessage(error.code);
-        }
-      }
-
-      // Função para mensagens de erro no cadastro
-      function getRegisterErrorMessage(errorCode) {
-        const errors = {
-          "auth/email-already-in-use": "E-mail já cadastrado",
-          "auth/invalid-email": "E-mail inválido",
-          "auth/operation-not-allowed": "Operação não permitida",
-          "auth/weak-password": "Senha fraca (mínimo 6 caracteres)"
-        };
-        return errors[errorCode] || "Erro ao cadastrar";
       }
     </script>
   </body>
