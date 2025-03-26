@@ -6,8 +6,8 @@
     <link rel="icon" href="img/social-media.gif" type="image/x-icon">
     <title>Checklist de Ocorrências</title>
     <style>
-        /* Reset básico */
-        * {
+         /* Reset básico */
+         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -201,6 +201,71 @@
             width: auto;
             margin-right: 10px;
         }
+        
+        /* Novos estilos adicionados */
+        .image-upload-container {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .upload-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+        }
+        
+        .upload-btn {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .upload-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .preview-container {
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .remove-image-btn {
+            margin-top: 5px;
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
     </style>
 </head>
 <body>
@@ -226,10 +291,8 @@
     <label for="workSchedule" class="required">Jornada de trabalho:</label>
     <select id="workSchedule" required>
         <option value="">Selecione</option>
-        <option value="Diurna">Diurna</option>
-        <option value="Noturna">Noturna</option>
-        <option value="Mista">Mista</option>
-        <option value="Horário Flexível">Horário Flexível</option>
+        <option value="Extra">Extra</option>
+        <option value="Normal">Normal</option>
     </select>
 </div>
 
@@ -350,10 +413,8 @@
                 <label for="workJourney" class="required">Jornada Trabalhada:</label>
                 <select id="workJourney" required>
                     <option value="">Selecione a jornada</option>
-                    <option value="Diurna">Diurna</option>
-                    <option value="Noturna">Noturna</option>
-                    <option value="Mista">Mista</option>
-                    <option value="Horário Flexível">Horário Flexível</option>
+                    <option value="Extra">Extra</option>
+                    <option value="Normal">Normal</option>
                 </select>
 
                 <label class="required">Região do corpo atingida:</label>
@@ -764,7 +825,7 @@
             // Listener para veículo envolvido
             document.querySelectorAll('input[name="vehicleInvolved"]').forEach(radio => {
                 radio.addEventListener('change', function() {
-                    document.getElementById('vehicleDetails').classlist.toggle('hidden', this.value !== 'Sim');
+                    document.getElementById('vehicleDetails').classList.toggle('hidden', this.value !== 'Sim');
                 });
             });
             
