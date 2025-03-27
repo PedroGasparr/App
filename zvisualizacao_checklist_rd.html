@@ -321,6 +321,65 @@
             color: white;
         }
 
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 70vh;
+            text-align: center;
+        }
+
+        .login-btn {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .login-btn:hover {
+            background-color: #3367D6;
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .logout-btn {
+            background-color: #EA4335;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 20px;
+        }
+
+        .logout-btn:hover {
+            background-color: #D33426;
+        }
+
         @media (max-width: 768px) {
             .filters {
                 padding: 15px;
@@ -339,34 +398,49 @@
         <p>Histórico completo das reuniões diárias</p>
     </div>
 
-    <div class="filters">
-        <div class="filter-group">
-            <label for="unitFilter">Filtrar por Unidade:</label>
-            <select id="unitFilter">
-                <option value="">Todas as unidades</option>
-                <option value="FABRICA LIMEIRA">Fábrica Limeira</option>
-                <option value="CD CARIACICA">CD Cariacica</option>
-                <option value="FABRICA BELEM">Fábrica Belém</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label for="dateFilter">Filtrar por Data:</label>
-            <input type="date" id="dateFilter">
-        </div>
+    <div id="authContainer" class="login-container">
+        <h2>Por favor, faça login para continuar</h2>
+        <button id="loginBtn" class="login-btn">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="google-icon" alt="Google logo">
+            Entrar com Google
+        </button>
     </div>
 
-    <div class="records-container" id="recordsContainer">
-        <div class="loading">Carregando registros...</div>
-    </div>
+    <div id="appContainer" style="display: none;">
+        <div id="userInfo" class="user-info">
+            <img id="userAvatar" class="user-avatar" src="" alt="Foto do usuário">
+            <span id="userName"></span>
+        </div>
 
-    <!-- Modal para senha de administrador -->
-    <div class="password-modal" id="passwordModal">
-        <div class="password-modal-content">
-            <h3>Digite a senha de administrador</h3>
-            <input type="password" id="adminPassword" placeholder="Senha de administrador">
-            <div class="password-modal-buttons">
-                <button class="password-modal-cancel" id="cancelDelete">Cancelar</button>
-                <button class="password-modal-confirm" id="confirmDelete">Confirmar</button>
+        <div class="filters">
+            <div class="filter-group">
+                <label for="unitFilter">Filtrar por Unidade:</label>
+                <select id="unitFilter">
+                    <option value="">Todas as unidades</option>
+                    <option value="FABRICA LIMEIRA">Fábrica Limeira</option>
+                    <option value="CD CARIACICA">CD Cariacica</option>
+                    <option value="FABRICA BELEM">Fábrica Belém</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="dateFilter">Filtrar por Data:</label>
+                <input type="date" id="dateFilter">
+            </div>
+        </div>
+
+        <div class="records-container" id="recordsContainer">
+            <div class="loading">Carregando registros...</div>
+        </div>
+
+        <!-- Modal para senha de administrador -->
+        <div class="password-modal" id="passwordModal">
+            <div class="password-modal-content">
+                <h3>Digite a senha de administrador</h3>
+                <input type="password" id="adminPassword" placeholder="Senha de administrador">
+                <div class="password-modal-buttons">
+                    <button class="password-modal-cancel" id="cancelDelete">Cancelar</button>
+                    <button class="password-modal-confirm" id="confirmDelete">Confirmar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -375,6 +449,7 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
     
         // Your Firebase configuration
         const firebaseConfig = {
@@ -391,6 +466,53 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // DOM elements
+        const authContainer = document.getElementById('authContainer');
+        const appContainer = document.getElementById('appContainer');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+
+        // Check auth state
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in
+                authContainer.style.display = 'none';
+                appContainer.style.display = 'block';
+                
+                // Display user info
+                userAvatar.src = user.photoURL || '';
+                userName.textContent = user.displayName || 'Usuário';
+                
+                // Load records
+                loadRecords();
+            } else {
+                // User is signed out
+                authContainer.style.display = 'flex';
+                appContainer.style.display = 'none';
+            }
+        });
+
+        // Login with Google
+        loginBtn.addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .catch((error) => {
+                    console.error('Erro no login:', error);
+                    alert('Erro ao fazer login. Por favor, tente novamente.');
+                });
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth)
+                .catch((error) => {
+                    console.error('Erro ao sair:', error);
+                });
+        });
     
         // Format date for display
         function formatDisplayDate(dateTimeString) {
@@ -657,9 +779,6 @@
             unitFilter.addEventListener('change', applyFilters);
             dateFilter.addEventListener('change', applyFilters);
         }
-    
-        // Load records when page loads
-        window.addEventListener('DOMContentLoaded', loadRecords);
     </script>
 </body>
 </html>

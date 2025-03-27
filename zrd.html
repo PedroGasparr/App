@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checklist de RD</title>
-    <link rel="stylesheet" href="wchckgeral.css">
+    <link rel="stylesheet" href="./css/wchckgeral.css">
     <link rel="icon" href="img/social-media.gif" type="image/x-icon">
 </head>
 <body>
@@ -69,6 +69,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
         import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
         const firebaseConfig = {
@@ -83,11 +84,26 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const database = getDatabase(app);
+        
         let imageBase64 = null;
         let totalCalculatedHours = 0;
         let appliedPercentage = 0;
         let isSpecialDay = false;
+        let currentUser = null;
+
+        // Monitora o estado de autenticação
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("Usuário logado:", user);
+            } else {
+                console.log("Nenhum usuário logado");
+                alert("Você precisa estar logado para acessar esta página!");
+                window.location.href = 'login.html';
+            }
+        });
 
         // Feriados nacionais do Brasil
         const brazilianHolidays = [
@@ -206,6 +222,12 @@
         document.getElementById('rdForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            if (!currentUser) {
+                alert("Você precisa estar logado para enviar o formulário!");
+                window.location.href = 'login.html';
+                return;
+            }
+
             const rdDate = document.getElementById('rdDate').value;
             const unit = document.getElementById('unit').value;
             const shift = document.getElementById('shift').value;
@@ -215,7 +237,6 @@
             const replacementCount = document.getElementById('replacementCount').value;
             const replacementHours = document.getElementById('replacementHours').value;
             const comments = document.getElementById('comments').value;
-            const email = localStorage.getItem("userEmail") || "desconhecido";
             const baseHours = replacementCount * replacementHours;
 
             if (!rdDate || !unit || !responsible || !attended || !absent) {
@@ -229,7 +250,7 @@
                 
                 await set(newRecordRef, {
                     rdDate,
-                    unit, // Novo campo adicionado
+                    unit,
                     shift,
                     responsible,
                     attended: parseInt(attended),
@@ -240,7 +261,9 @@
                     appliedPercentage,
                     totalHours: totalCalculatedHours,
                     isSpecialDay,
-                    email,
+                    email: currentUser.email,
+                    userId: currentUser.uid,
+                    provider: currentUser.providerData[0]?.providerId || "email",
                     comments,
                     photo: imageBase64 || "",
                     timestamp: new Date().toISOString()
@@ -250,7 +273,7 @@
                 document.getElementById('rdForm').reset();
                 document.getElementById('imagePreview').style.display = 'none';
                 document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
-                document.getElementById('unit').value = ""; // Resetar a seleção da unidade
+                document.getElementById('unit').value = "";
                 document.getElementById('replacementCount').value = 0;
                 imageBase64 = null;
                 calculateReplacement();

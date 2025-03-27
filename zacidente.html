@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checklist de Ocorrências</title>
     <link rel="icon" href="img/social-media.gif" type="image/x-icon">
-    <link rel="stylesheet" href="wchckgeral.css">
+    <link rel="stylesheet" href="./css/wchckgeral.css">
     <style>
         .hidden {
             display: none;
@@ -25,6 +25,14 @@
         .level-3 { background-color: #ffeeba; color: #856404; }
         .level-4 { background-color: #f8d7da; color: #721c24; }
         .level-5 { background-color: #dc3545; color: white; }
+        #successMessage {
+            display: none;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -195,11 +203,36 @@
             </div>
 
             <button type="submit">Enviar</button>
+            <div id="successMessage">Ocorrência registrada com sucesso!</div>
             <button type="button" class="back-button" onclick="window.location.href = 'zhome.html';">Voltar ao Dashboard</button>
         </form>
     </div>
 
-    <script type="module">
+    <!-- Import Firebase scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.firebasestorage.app",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+    </script>
+
+    <script>
         document.addEventListener("DOMContentLoaded", () => {
             // Configurações iniciais
             const now = new Date();
@@ -207,14 +240,17 @@
             const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
             document.getElementById('date').value = localISOTime;
             
-            // Preenche o campo de e-mail do usuário logado
-            const userEmail = localStorage.getItem('userEmail');
-            if (userEmail) {
-                document.getElementById('userEmail').value = userEmail;
-            } else {
-                alert("Usuário não autenticado. Faça login novamente.");
-                window.location.href = "/login.html";
-            }
+            // Verifica se o usuário está logado
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // Usuário logado, preenche o email
+                    document.getElementById('userEmail').value = user.email;
+                } else {
+                    // Usuário não logado, redireciona para login
+                    alert("Usuário não autenticado. Faça login novamente.");
+                    window.location.href = "/login.html";
+                }
+            });
             
             // Mostrar/ocultar perguntas condicionais
             document.getElementById('q1_sim').addEventListener('change', function() {
@@ -341,15 +377,23 @@
             document.getElementById('actionPlan').textContent = `Ações recomendadas: ${actionPlan}`;
         }
     
-        // Adicionando evento ao formulário para salvar no localStorage
-        document.getElementById('occurrenceForm').addEventListener('submit', (e) => {
+        // Adicionando evento ao formulário para salvar no Firebase
+        document.getElementById('occurrenceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+    
+            // Verifica se o usuário está autenticado
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Usuário não autenticado. Faça login novamente.");
+                window.location.href = "/login.html";
+                return;
+            }
     
             // Coleta dos dados gerais
             const date = document.getElementById('date').value;
             const location = document.getElementById('location').value;
             const responsibleName = document.getElementById('responsibleName').value;
-            const userEmail = document.getElementById('userEmail').value;
+            const userEmail = user.email;
     
             // Coleta das respostas
             const answers = getFormAnswers();
@@ -389,14 +433,31 @@
                 level,
                 actionPlan,
                 // Adiciona timestamp para controle
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                uid: user.uid // Adiciona o UID do usuário para referência
             };
     
-            // Salva no localStorage
-            localStorage.setItem('currentOccurrence', JSON.stringify(occurrenceData));
-            
-            // Redireciona para a próxima página
-            window.location.href = "zeliminar.html";
+            try {
+                // Salva no Firebase Realtime Database
+                const newOccurrenceRef = database.ref('occurrences').push();
+                await newOccurrenceRef.set(occurrenceData);
+                
+                // Mostra mensagem de sucesso
+                document.getElementById('successMessage').style.display = 'block';
+                
+                // Opcional: Limpa o formulário após o envio
+                // document.getElementById('occurrenceForm').reset();
+                
+                // Atualiza a classificação para mostrar os dados enviados
+                updateClassification();
+                
+                // Rola a página para mostrar a mensagem de sucesso
+                document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error("Erro ao salvar ocorrência:", error);
+                alert("Ocorreu um erro ao salvar a ocorrência. Por favor, tente novamente.");
+            }
         });
     </script>
 

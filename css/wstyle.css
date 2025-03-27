@@ -399,3 +399,15 @@ form.sign-in-form {
     left: 50%;
   }
 }
+.google-btn {
+  background-color: #DB4437;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
