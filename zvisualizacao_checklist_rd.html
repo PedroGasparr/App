@@ -380,6 +380,54 @@
             background-color: #D33426;
         }
 
+        /* Novo estilo para a lista de faltantes */
+        .absent-list {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff5f5;
+            border-radius: 6px;
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .absent-list-title {
+            font-weight: 600;
+            color: var(--danger-color);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .absent-employee {
+            display: block;
+            color: var(--danger-color);
+            font-size: 13px;
+            padding: 4px 0;
+            margin-left: 12px;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .absent-employee:before {
+            content: "•";
+            position: absolute;
+            left: -10px;
+            color: var(--danger-color);
+        }
+
+        /* Estilo para quando os nomes vêm em uma string separada por vírgulas */
+        .absent-list.comma-separated .absent-employee {
+            display: inline;
+            margin-left: 0;
+        }
+
+        .absent-list.comma-separated .absent-employee:before {
+            content: none;
+        }
+
+        .absent-list.comma-separated .absent-employee:not(:last-child):after {
+            content: ",";
+            margin-right: 4px;
+        }
+
         @media (max-width: 768px) {
             .filters {
                 padding: 15px;
@@ -410,6 +458,7 @@
         <div id="userInfo" class="user-info">
             <img id="userAvatar" class="user-avatar" src="" alt="Foto do usuário">
             <span id="userName"></span>
+            <button class="logout-btn" id="logoutBtn">Sair</button>
         </div>
 
         <div class="filters">
@@ -595,6 +644,18 @@
             }
             return '';
         }
+
+        // Função para formatar a lista de faltantes
+        function formatAbsentEmployees(comments) {
+            // Remove o prefixo "Faltantes: " se existir
+            const employeesString = comments.replace(/^Faltantes:\s*/i, '');
+            
+            // Divide os nomes por vírgula e remove espaços em branco
+            const employees = employeesString.split(',').map(e => e.trim()).filter(e => e);
+            
+            // Cria os elementos HTML para cada funcionário
+            return employees.map(e => `<div class="absent-employee">${e}</div>`).join('');
+        }
     
         // Filter and sort records
         function processRecords(data, unitFilter, dateFilter) {
@@ -669,8 +730,13 @@
                         
                         ${record.comments ? `
                         <div class="info-row">
-                            <span class="info-label">Observações:</span>
-                            <span class="info-value">${record.comments}</span>
+                            <span class="info-label">Faltantes:</span>
+                            <div class="info-value">
+                                <div class="absent-list ${record.comments.includes(',') ? 'comma-separated' : ''}">
+                                    <div class="absent-list-title">Funcionários ausentes:</div>
+                                    ${formatAbsentEmployees(record.comments)}
+                                </div>
+                            </div>
                         </div>` : ''}
                         
                         ${record.photo ? `

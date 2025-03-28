@@ -6,6 +6,39 @@
     <title>Checklist de RD</title>
     <link rel="stylesheet" href="./css/wchckgeral.css">
     <link rel="icon" href="img/social-media.gif" type="image/x-icon">
+    <style>
+        .employee-list {
+            display: none;
+            margin-top: 10px;
+        }
+        .employee-list label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .employee-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .employee-checkbox {
+            display: flex;
+            align-items: center;
+        }
+        .employee-checkbox input {
+            margin-right: 8px;
+        }
+        @media (max-width: 600px) {
+            .employee-checkboxes {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="form-container">
@@ -26,7 +59,7 @@
             <select id="shift" required>
                 <option value="manhã">Manhã</option>
                 <option value="tarde">Tarde</option>
-                <option value="noite">Noite</option>
+                <option value="Intermediario">Intermediario</option>
             </select>
 
             <label for="responsible">Responsável:</label>
@@ -54,8 +87,18 @@
                 <div id="holidayInfo"></div>
             </div>
 
-            <label for="comments">Observações:</label>
-            <textarea id="comments" rows="4"></textarea>
+            <div id="commentsContainer">
+                <label for="comments">Observações:</label>
+                <textarea id="comments" rows="4"></textarea>
+            </div>
+            
+            <div id="employeeListContainer" class="employee-list">
+                <label>Selecione quem faltou:</label>
+                <div id="employeeCheckboxes" class="employee-checkboxes">
+                    <!-- Checkboxes serão gerados dinamicamente pelo JavaScript -->
+                </div>
+                <div class="scroll-hint">Role para ver mais funcionários</div>
+            </div>
             
             <label for="photo">Foto (opcional):</label>
             <input type="file" id="photo" accept="image/*">
@@ -86,6 +129,27 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const database = getDatabase(app);
+        
+        // Lista de funcionários do CD Cariacica (facilmente editável)
+        const cariacicaEmployees = [
+            "ERICK DA SILVA PEREIRA",
+            "FABRICIO PEREIRA VIDA",
+            "GABRIEL SILVA DE ANDRADE",
+            "LUCAS ISLAM SANTOS MENESES",
+            "LUCAS MARTINS",
+            "RUAN DE OLIVEIRA VIANA",
+            "THAIRONY OLIVEIRA AMARAL",
+            "TIAGO DO COUTO COSTA",
+            "YARLEY PEREIRA SALES",
+            "RAPAHEL PEREIRA ASSEM",
+            "KESSIA VIEIRA GONÇALVES",
+            "FILIPE ISMAEL",
+            "DANIEL ROCHA",
+            "ADRIANO DO SACRAMENTO",
+            "IGOR FERREIRA",
+            "DAVI LUCAS LEOLPOLDO",
+            "YAGO VASCONCELOS"
+        ];
         
         let imageBase64 = null;
         let totalCalculatedHours = 0;
@@ -195,13 +259,56 @@
             });
         }
 
+        // Função para gerar os checkboxes dos funcionários
+        function generateEmployeeCheckboxes() {
+            const container = document.getElementById('employeeCheckboxes');
+            container.innerHTML = ''; // Limpa o container
+            
+            cariacicaEmployees.forEach(employee => {
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'employee-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `emp-${employee.replace(/\s+/g, '-').toLowerCase()}`;
+                checkbox.value = employee;
+                
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = employee;
+                
+                checkboxDiv.appendChild(checkbox);
+                checkboxDiv.appendChild(label);
+                container.appendChild(checkboxDiv);
+            });
+        }
+
+        // Função para atualizar a interface com base na unidade selecionada
+        function updateInterfaceBasedOnUnit() {
+            const unit = document.getElementById('unit').value;
+            const commentsContainer = document.getElementById('commentsContainer');
+            const employeeListContainer = document.getElementById('employeeListContainer');
+            
+            if (unit === "CD CARIACICA") {
+                commentsContainer.style.display = 'none';
+                employeeListContainer.style.display = 'block';
+            } else {
+                commentsContainer.style.display = 'block';
+                employeeListContainer.style.display = 'none';
+            }
+        }
+
         // Inicialização
-        document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+            generateEmployeeCheckboxes();
+        });
 
         // Event listeners
         document.getElementById('replacementCount').addEventListener('input', calculateReplacement);
         document.getElementById('replacementHours').addEventListener('change', calculateReplacement);
         document.getElementById('rdDate').addEventListener('change', calculateReplacement);
+        document.getElementById('unit').addEventListener('change', updateInterfaceBasedOnUnit);
 
         document.getElementById('photo').addEventListener('change', async (event) => {
             const file = event.target.files[0];
@@ -236,12 +343,21 @@
             const absent = document.getElementById('absent').value;
             const replacementCount = document.getElementById('replacementCount').value;
             const replacementHours = document.getElementById('replacementHours').value;
-            const comments = document.getElementById('comments').value;
             const baseHours = replacementCount * replacementHours;
 
             if (!rdDate || !unit || !responsible || !attended || !absent) {
                 alert("Por favor, preencha todos os campos obrigatórios.");
                 return;
+            }
+
+            // Obter observações ou lista de faltantes
+            let comments = "";
+            if (unit === "CD CARIACICA") {
+                const checkboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
+                const selectedEmployees = Array.from(checkboxes).map(cb => cb.value);
+                comments =(selectedEmployees.length > 0 ? selectedEmployees.join(", ") : "Sem Faltas");
+            } else {
+                comments = document.getElementById('comments').value;
             }
 
             try {
@@ -277,6 +393,12 @@
                 document.getElementById('replacementCount').value = 0;
                 imageBase64 = null;
                 calculateReplacement();
+                updateInterfaceBasedOnUnit();
+                
+                // Desmarcar todos os checkboxes
+                document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
             } catch (error) {
                 console.error("Erro ao salvar dados:", error);
                 alert("Ocorreu um erro ao enviar os dados. Por favor, tente novamente.");
