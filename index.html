@@ -118,32 +118,63 @@
       provider.addScope('email');
       provider.addScope('profile');
 
-      // Função de login com Google
-      function signInWithGoogle() {
-        firebase.auth().signInWithPopup(provider)
-          .then((result) => {
-            // Login bem-sucedido
-            const user = result.user;
-            console.log("Usuário logado:", user);
-            
-            // Redireciona para a página principal
-            window.location.href = 'zhome.html';
-          })
-          .catch((error) => {
-            // Tratamento de erros
-            console.error("Erro no login:", error);
-            const errorMessage = document.getElementById("message");
-            
-            // Mensagens de erro mais amigáveis
-            if (error.code === 'auth/popup-closed-by-user') {
-              errorMessage.textContent = "O popup de login foi fechado. Tente novamente.";
-            } else {
-              errorMessage.textContent = "Erro ao fazer login: " + error.message;
-            }
-            
-            errorMessage.style.color = "red";
-          });
+      // Função para verificar se é dispositivo móvel
+      function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       }
+
+      // Função para mostrar mensagens
+      function showMessage(message) {
+        const errorMessage = document.getElementById("message");
+        errorMessage.textContent = message;
+        errorMessage.style.color = "red";
+      }
+
+      // Função para lidar com login bem-sucedido
+      function handleLoginSuccess(user) {
+        console.log("Usuário logado:", user);
+        window.location.href = 'zhome.html';
+      }
+
+      // Função de login com Google atualizada
+      function signInWithGoogle() {
+        if (isMobileDevice()) {
+          // Em dispositivos móveis, usa redirecionamento
+          firebase.auth().signInWithRedirect(provider)
+            .catch((error) => {
+              showMessage("Erro no login: " + error.message);
+            });
+        } else {
+          // Em desktop, continua usando popup
+          firebase.auth().signInWithPopup(provider)
+            .then((result) => {
+              handleLoginSuccess(result.user);
+            })
+            .catch((error) => {
+              console.error("Erro no login:", error);
+              let errorMessage = "Erro ao fazer login: " + error.message;
+              
+              if (error.code === 'auth/popup-closed-by-user') {
+                errorMessage = "O popup de login foi fechado. Tente novamente.";
+              } else if (error.code === 'auth/popup-blocked') {
+                errorMessage = "O popup foi bloqueado. Por favor, permita popups para este site.";
+              }
+              
+              showMessage(errorMessage);
+            });
+        }
+      }
+
+      // Lidar com o resultado do redirecionamento (para mobile)
+      firebase.auth().getRedirectResult()
+        .then((result) => {
+          if (result.user) {
+            handleLoginSuccess(result.user);
+          }
+        })
+        .catch((error) => {
+          showMessage("Erro no login: " + error.message);
+        });
     </script>
   </body>
 </html>
