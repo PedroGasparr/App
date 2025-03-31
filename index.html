@@ -1,180 +1,349 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="img/social-media.gif" type="image/x-icon">
-    <script src="https://kit.fontawesome.com/64d58efce2.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="./css/wstyle.css" />
-    <title>Guizilim</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - GZL Treinamentos</title>
+    <link rel="stylesheet" href="./CSS/wstyle.css">
+ 
+    <!-- Firebase SDK (modular version) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            signInWithRedirect, 
+            GoogleAuthProvider, 
+            getRedirectResult,
+            sendEmailVerification
+        } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+        
+        // Sua configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.firebasestorage.app",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
 
-    <!-- Firebase (versão compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    
-    <style>
-      /* Estilos para o botão do Google */
-      .google-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #fff;
-        color: #757575;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 12px 16px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        width: 100%;
-        max-width: 300px;
-        margin: 20px auto;
-        box-shadow: 0 2px 4px 0 rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-      }
-      
-      .google-btn:hover {
-        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.1);
-        background-color: #f8f8f8;
-      }
-      
-      .google-btn .icon {
-        margin-right: 12px;
-        width: 18px;
-        height: 18px;
-      }
-      
-      .login-container {
-        text-align: center;
-        padding: 40px;
-      }
-      
-      .login-title {
-        font-size: 24px;
-        margin-bottom: 30px;
-        color: #333;
-      }
-      
-      .login-description {
-        font-size: 16px;
-        color: #666;
-        margin-bottom: 30px;
-      }
-    </style>
-  </head>
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const provider = new GoogleAuthProvider();
 
-  <body>
-    <div class="container">
-      <div class="forms-container">
-        <div class="signin-signup">
-          <!-- Formulário simplificado apenas com login do Google -->
-          <div class="login-container">
-            <h2 class="login-title">Bem-vindo ao Guizilim App</h2>
-            <p class="login-description">Faça login com sua conta Google para continuar</p>
+        // Adiciona escopos necessários
+        provider.addScope('profile');
+        provider.addScope('email');
+
+        // Função para salvar dados do usuário no Realtime Database
+        const saveUserData = (userId, name, email, birthdate, unit) => {
+            const userRef = ref(database, 'users/' + userId);
             
-            <!-- Botão de Login com Google melhorado -->
-            <button type="button" class="google-btn" onclick="signInWithGoogle()">
-              <img src="./img/iconGoogle.png" class="icon" alt="Google logo">
-              <span>Entrar com Google</span>
-            </button>
-            
-            <p id="message" style="color: red; margin-top: 20px;"></p>
-          </div>
-        </div>
-      </div>
+            set(userRef, {
+                username: name,
+                email: email,
+                birthdate: birthdate || null,
+                unit: unit || null,
+                last_login: new Date().toISOString(),
+                email_verified: false // Será atualizado quando o usuário verificar o email
+            }).then(() => {
+                console.log("Dados do usuário salvos com sucesso!");
+            }).catch((error) => {
+                console.error("Erro ao salvar dados do usuário:", error);
+                throw error;
+            });
+        };
 
-      <div class="panels-container">
-        <div class="panel left-panel">
-          <div class="content">
-            <h3>Sobre nós</h3>
-            <p>Conheça mais sobre nossa plataforma e serviços.</p>
-          </div>
-          <img src="img/log.svg" class="image" alt="" />
+        // Verifica o resultado do redirecionamento
+        getRedirectResult(auth).then((result) => {
+            if (result) {
+                document.getElementById('loader').style.display = 'block';
+                
+                const user = result.user;
+                const credential = GoogleAuthProvider.credentialFromResult(result);
+                
+                // Salva dados do usuário do Google
+                saveUserData(
+                    user.uid, 
+                    user.displayName || 'Usuário Google', 
+                    user.email, 
+                    null, 
+                    null
+                ).then(() => {
+                    // Redireciona para a home após salvar os dados
+                    window.location.href = 'zhome.html';
+                }).catch(error => {
+                    document.getElementById('loader').style.display = 'none';
+                    console.error("Erro ao salvar dados do usuário:", error);
+                    alert("Ocorreu um erro ao salvar seus dados. Por favor, tente novamente.");
+                });
+            }
+        }).catch((error) => {
+            console.error("Erro no redirecionamento:", error);
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            
+            if (errorCode === 'auth/account-exists-with-different-credential') {
+                alert('Já existe uma conta com o mesmo endereço de email, mas credenciais diferentes.');
+            } else {
+                alert(`Erro no login: ${errorMessage}`);
+            }
+        });
+
+        // Função para mostrar mensagem de erro
+        const showError = (elementId, message) => {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        };
+
+        // Função para esconder mensagem de erro
+        const hideError = (elementId) => {
+            const element = document.getElementById(elementId);
+            element.style.display = 'none';
+        };
+
+        // Disponibiliza para o escopo global
+        window.firebase = {
+            auth,
+            database,
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            signInWithRedirect,
+            provider,
+            ref,
+            set,
+            saveUserData,
+            sendEmailVerification,
+            showError,
+            hideError
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="container" id="container">
+        <div class="form-container sign-in-container">
+            <form id="signInForm">
+                <h1>Entrar</h1>
+                <div class="login-section" style="display: none;">
+                  <h1>Entrar</h1>
+                  <div class="social-container">
+                      <div class="social" id="googleSignIn">
+                          <img src="./img/iconGoogle.png" alt="Google">
+                      </div>
+                  </div>
+                  <span>ou use sua conta</span>
+              </div>
+                <input type="email" id="loginEmail" placeholder="Email" required />
+                <div id="loginEmailError" class="error-message"></div>
+                <input type="password" id="loginPassword" placeholder="Senha" required />
+                <div id="loginPasswordError" class="error-message"></div>
+                <a href="#" id="forgotPassword">Esqueceu sua senha?</a>
+                <button type="submit">Entrar</button>
+            </form>
         </div>
-      </div>
+        <div class="form-container sign-up-container">
+            <form id="signUpForm">
+                <h1>Criar Conta</h1>
+                <input type="text" id="signUpName" placeholder="Nome Completo" required />
+                <div id="signUpNameError" class="error-message"></div>
+                <input type="email" id="signUpEmail" placeholder="Email" required />
+                <div id="signUpEmailError" class="error-message"></div>
+                <input type="password" id="signUpPassword" placeholder="Senha" required />
+                <div id="signUpPasswordError" class="error-message"></div>
+                <input type="date" id="signUpBirthdate" required />
+                <div id="signUpBirthdateError" class="error-message"></div>
+                <select id="signUpUnit" required>
+                    <option value="" disabled selected>Selecione sua unidade</option>
+                    <option value="Fabrica Belem">Fabrica Belem</option>
+                    <option value="Fabrica Limeira">Fabrica Limeira</option>
+                    <option value="CD Cariacica">CD Cariacica</option>
+                </select>
+                <div id="signUpUnitError" class="error-message"></div>
+                <button type="submit">Cadastrar</button>
+            </form>
+        </div>
+        <div id="loader" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;">Carregando...</div>
+        </div>
+        <div class="overlay-container">
+            <div class="overlay">
+                <div class="overlay-panel overlay-left">
+                    <h1>Já tem uma conta?</h1>
+                    <p>Faça login com seus dados pessoais</p>
+                    <button class="ghost" id="signIn">Entrar</button>
+                </div>
+                <div class="overlay-panel overlay-right">
+                    <h1>Novo aqui?</h1>
+                    <p>Cadastre-se e comece sua jornada conosco</p>
+                    <button class="ghost" id="signUp">Criar Conta</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Firebase Initialization Script -->
     <script>
-      // Configuração do Firebase
-      const firebaseConfig = {
-        apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
-        authDomain: "application-gzl.firebaseapp.com",
-        projectId: "application-gzl",
-        storageBucket: "application-gzl.appspot.com",
-        messagingSenderId: "319900903265",
-        appId: "1:319900903265:web:a8f400aeb7a697fc168720",
-        measurementId: "G-ZRRFQZXT54"
-      };
-
-      // Inicializa o Firebase
-      firebase.initializeApp(firebaseConfig);
-
-      // Provedor de autenticação do Google
-      const provider = new firebase.auth.GoogleAuthProvider();
-      
-      // Configura escopo adicional para acessar o e-mail do usuário
-      provider.addScope('email');
-      provider.addScope('profile');
-
-      // Função para verificar se é dispositivo móvel
-      function isMobileDevice() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      }
-
-      // Função para mostrar mensagens
-      function showMessage(message) {
-        const errorMessage = document.getElementById("message");
-        errorMessage.textContent = message;
-        errorMessage.style.color = "red";
-      }
-
-      // Função para lidar com login bem-sucedido
-      function handleLoginSuccess(user) {
-        console.log("Usuário logado:", user);
-        window.location.href = 'zhome.html';
-      }
-
-      // Função de login com Google atualizada
-      function signInWithGoogle() {
-        if (isMobileDevice()) {
-          // Em dispositivos móveis, usa redirecionamento
-          firebase.auth().signInWithRedirect(provider)
-            .catch((error) => {
-              showMessage("Erro no login: " + error.message);
+        // Adiciona o evento de clique para o login com Google
+        document.addEventListener('DOMContentLoaded', function() {
+            const googleSignInBtn = document.getElementById('googleSignIn');
+            const signInForm = document.getElementById('signInForm');
+            const signUpForm = document.getElementById('signUpForm');
+            const signInButton = document.getElementById('signIn');
+            const signUpButton = document.getElementById('signUp');
+            const container = document.getElementById('container');
+            
+            // Alternar entre login e cadastro
+            signUpButton.addEventListener('click', () => {
+                container.classList.add("right-panel-active");
             });
-        } else {
-          // Em desktop, continua usando popup
-          firebase.auth().signInWithPopup(provider)
-            .then((result) => {
-              handleLoginSuccess(result.user);
-            })
-            .catch((error) => {
-              console.error("Erro no login:", error);
-              let errorMessage = "Erro ao fazer login: " + error.message;
-              
-              if (error.code === 'auth/popup-closed-by-user') {
-                errorMessage = "O popup de login foi fechado. Tente novamente.";
-              } else if (error.code === 'auth/popup-blocked') {
-                errorMessage = "O popup foi bloqueado. Por favor, permita popups para este site.";
-              }
-              
-              showMessage(errorMessage);
+            
+            signInButton.addEventListener('click', () => {
+                container.classList.remove("right-panel-active");
             });
-        }
-      }
-
-      // Lidar com o resultado do redirecionamento (para mobile)
-      firebase.auth().getRedirectResult()
-        .then((result) => {
-          if (result.user) {
-            handleLoginSuccess(result.user);
-          }
-        })
-        .catch((error) => {
-          showMessage("Erro no login: " + error.message);
+            
+            // Login com Google
+            googleSignInBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('loader').style.display = 'block';
+                
+                window.firebase.signInWithRedirect(window.firebase.provider)
+                    .catch(error => {
+                        document.getElementById('loader').style.display = 'none';
+                        console.error("Erro ao iniciar login com Google:", error);
+                        alert("Ocorreu um erro ao tentar fazer login com Google");
+                    });
+            });
+            
+            // Login com email e senha
+            signInForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                document.getElementById('loader').style.display = 'block';
+                
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                // Limpa erros anteriores
+                window.firebase.hideError('loginEmailError');
+                window.firebase.hideError('loginPasswordError');
+                
+                window.firebase.signInWithEmailAndPassword(window.firebase.auth, email, password)
+                    .then((userCredential) => {
+                        const user = userCredential.user;
+                        
+                        // Verifica se o email foi verificado
+                        if (!user.emailVerified) {
+                            document.getElementById('loader').style.display = 'none';
+                            alert('Por favor, verifique seu email antes de fazer login. Verifique sua caixa de entrada ou spam.');
+                            return window.firebase.auth.signOut();
+                        }
+                        
+                        // Redireciona para a página home
+                        window.location.href = 'zhome.html';
+                    })
+                    .catch((error) => {
+                        document.getElementById('loader').style.display = 'none';
+                        const errorCode = error.code;
+                        const errorMessage = error.message;
+                        
+                        if (errorCode === 'auth/invalid-email') {
+                            window.firebase.showError('loginEmailError', 'Email inválido');
+                        } else if (errorCode === 'auth/user-disabled') {
+                            window.firebase.showError('loginEmailError', 'Esta conta foi desativada');
+                        } else if (errorCode === 'auth/user-not-found') {
+                            window.firebase.showError('loginEmailError', 'Usuário não encontrado');
+                        } else if (errorCode === 'auth/wrong-password') {
+                            window.firebase.showError('loginPasswordError', 'Senha incorreta');
+                        } else {
+                            alert(`Erro no login: ${errorMessage}`);
+                        }
+                    });
+            });
+            
+            // Cadastro com email e senha
+            signUpForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                document.getElementById('loader').style.display = 'block';
+                
+                const name = document.getElementById('signUpName').value;
+                const email = document.getElementById('signUpEmail').value;
+                const password = document.getElementById('signUpPassword').value;
+                const birthdate = document.getElementById('signUpBirthdate').value;
+                const unit = document.getElementById('signUpUnit').value;
+                
+                // Limpa erros anteriores
+                window.firebase.hideError('signUpNameError');
+                window.firebase.hideError('signUpEmailError');
+                window.firebase.hideError('signUpPasswordError');
+                window.firebase.hideError('signUpBirthdateError');
+                window.firebase.hideError('signUpUnitError');
+                
+                window.firebase.createUserWithEmailAndPassword(window.firebase.auth, email, password)
+                    .then((userCredential) => {
+                        const user = userCredential.user;
+                        
+                        // Envia email de verificação
+                        return window.firebase.sendEmailVerification(user)
+                            .then(() => {
+                                // Salva os dados do usuário no banco de dados
+                                return window.firebase.saveUserData(
+                                    user.uid, 
+                                    name, 
+                                    email, 
+                                    birthdate, 
+                                    unit
+                                );
+                            })
+                            .then(() => {
+                                alert(`Cadastro realizado com sucesso! Um email de verificação foi enviado para ${email}. Por favor, verifique sua caixa de entrada ou spam.`);
+                                document.getElementById('loader').style.display = 'none';
+                                container.classList.remove("right-panel-active");
+                                signUpForm.reset();
+                            });
+                    })
+                    .catch((error) => {
+                        document.getElementById('loader').style.display = 'none';
+                        const errorCode = error.code;
+                        const errorMessage = error.message;
+                        
+                        if (errorCode === 'auth/email-already-in-use') {
+                            window.firebase.showError('signUpEmailError', 'Este email já está em uso');
+                        } else if (errorCode === 'auth/invalid-email') {
+                            window.firebase.showError('signUpEmailError', 'Email inválido');
+                        } else if (errorCode === 'auth/weak-password') {
+                            window.firebase.showError('signUpPasswordError', 'Senha muito fraca (mínimo 6 caracteres)');
+                        } else if (errorCode === 'auth/missing-display-name') {
+                            window.firebase.showError('signUpNameError', 'Nome é obrigatório');
+                        } else {
+                            alert(`Erro no cadastro: ${errorMessage}`);
+                        }
+                    });
+            });
+            
+            // Esqueci minha senha
+            document.getElementById('forgotPassword').addEventListener('click', function(e) {
+                e.preventDefault();
+                const email = prompt("Por favor, digite seu email para redefinir a senha:");
+                
+                if (email) {
+                    window.firebase.auth.sendPasswordResetEmail(email)
+                        .then(() => {
+                            alert(`Um email para redefinição de senha foi enviado para ${email}. Verifique sua caixa de entrada ou spam.`);
+                        })
+                        .catch((error) => {
+                            alert(`Erro ao enviar email de redefinição: ${error.message}`);
+                        });
+                }
+            });
         });
     </script>
-  </body>
+    <script src="./js/LOGIN.JS"></script>
+</body>
 </html>

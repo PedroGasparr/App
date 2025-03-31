@@ -38,9 +38,41 @@
                 grid-template-columns: 1fr;
             }
         }
+        .warning {
+            color: #ff5722;
+            font-weight: bold;
+        }
+        #loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        #loader div {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+        }
+        #imagePreview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <div id="loader">
+        <div>Carregando...</div>
+    </div>
+
     <div class="form-container">
         <h1>Checklist RDO</h1>
         <form id="rdForm">
@@ -59,6 +91,7 @@
             <select id="shift" required>
                 <option value="manhã">Manhã</option>
                 <option value="tarde">Tarde</option>
+                <option value="Noite">Noite</option>
                 <option value="Intermediario">Intermediario</option>
             </select>
 
@@ -112,9 +145,19 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            sendEmailVerification
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { 
+            getDatabase, 
+            ref, 
+            push, 
+            set 
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
+        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
             authDomain: "application-gzl.firebaseapp.com",
@@ -126,11 +169,12 @@
             measurementId: "G-ZRRFQZXT54"
         };
 
+        // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const database = getDatabase(app);
         
-        // Lista de funcionários do CD Cariacica (facilmente editável)
+        // Lista de funcionários do CD Cariacica
         const cariacicaEmployees = [
             "ERICK DA SILVA PEREIRA",
             "FABRICIO PEREIRA VIDA",
@@ -151,23 +195,12 @@
             "YAGO VASCONCELOS"
         ];
         
+        // Variáveis globais
         let imageBase64 = null;
         let totalCalculatedHours = 0;
         let appliedPercentage = 0;
         let isSpecialDay = false;
         let currentUser = null;
-
-        // Monitora o estado de autenticação
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                console.log("Usuário logado:", user);
-            } else {
-                console.log("Nenhum usuário logado");
-                alert("Você precisa estar logado para acessar esta página!");
-                window.location.href = 'login.html';
-            }
-        });
 
         // Feriados nacionais do Brasil
         const brazilianHolidays = [
@@ -181,11 +214,13 @@
             "12-25"  // Natal
         ];
 
+        // Verifica se a data é feriado
         function isHoliday(date) {
             const monthDay = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             return brazilianHolidays.includes(monthDay);
         }
 
+        // Obtém a data/hora no fuso horário do Brasil
         function getBrazilianDateTime() {
             const now = new Date();
             const localOffset = now.getTimezoneOffset();
@@ -194,6 +229,7 @@
             return new Date(now.getTime() + diff);
         }
 
+        // Formata a data/hora para o input datetime-local
         function formatDateTime(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -203,6 +239,7 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
+        // Calcula as horas de reposição
         function calculateReplacement() {
             const replacementCount = parseInt(document.getElementById('replacementCount').value) || 0;
             const replacementHours = parseInt(document.getElementById('replacementHours').value) || 2;
@@ -216,12 +253,12 @@
             
             if (isSpecialDay) {
                 appliedPercentage = 100;
-                totalCalculatedHours = baseHours;
+                totalCalculatedHours = baseHours * 2; // 100% de acréscimo
                 document.getElementById('replacementCalculation').textContent = `${baseHours} horas + 100%`;
                 document.getElementById('holidayInfo').innerHTML = `<span class="warning">⚠️ ${isHolidayToday ? "Feriado nacional" : "Domingo"} - 100% de acréscimo</span>`;
             } else {
                 appliedPercentage = 50;
-                totalCalculatedHours = baseHours;
+                totalCalculatedHours = baseHours * 1.5; // 50% de acréscimo
                 document.getElementById('replacementCalculation').textContent = `${baseHours} horas + 50%`;
                 document.getElementById('holidayInfo').textContent = "Dia comum - 50% de acréscimo";
             }
@@ -229,8 +266,9 @@
             document.getElementById('totalHoursDisplay').textContent = `Total: ${totalCalculatedHours} horas (${replacementCount} pessoas × ${replacementHours} horas)`;
         }
 
+        // Comprime a imagem para reduzir o tamanho
         function compressImage(file, maxWidth = 800, quality = 0.7) {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const img = new Image();
@@ -250,19 +288,30 @@
                         canvas.height = height;
                         
                         ctx.drawImage(img, 0, 0, width, height);
-                        const compressedData = canvas.toDataURL('image/jpeg', quality);
-                        resolve(compressedData);
+                        canvas.toBlob((blob) => {
+                            if (!blob) {
+                                reject(new Error("Falha ao comprimir imagem"));
+                                return;
+                            }
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                resolve(reader.result);
+                            };
+                            reader.readAsDataURL(blob);
+                        }, 'image/jpeg', quality);
                     };
+                    img.onerror = () => reject(new Error("Falha ao carregar imagem"));
                     img.src = event.target.result;
                 };
+                reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
                 reader.readAsDataURL(file);
             });
         }
 
-        // Função para gerar os checkboxes dos funcionários
+        // Gera os checkboxes dos funcionários
         function generateEmployeeCheckboxes() {
             const container = document.getElementById('employeeCheckboxes');
-            container.innerHTML = ''; // Limpa o container
+            container.innerHTML = '';
             
             cariacicaEmployees.forEach(employee => {
                 const checkboxDiv = document.createElement('div');
@@ -283,7 +332,7 @@
             });
         }
 
-        // Função para atualizar a interface com base na unidade selecionada
+        // Atualiza a interface com base na unidade selecionada
         function updateInterfaceBasedOnUnit() {
             const unit = document.getElementById('unit').value;
             const commentsContainer = document.getElementById('commentsContainer');
@@ -298,115 +347,198 @@
             }
         }
 
-        // Inicialização
+        // Mostra o loader
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        // Esconde o loader
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        // Inicialização quando o DOM estiver carregado
         document.addEventListener('DOMContentLoaded', () => {
+            // Configura a data/hora atual
             document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+            
+            // Gera os checkboxes dos funcionários
             generateEmployeeCheckboxes();
-        });
-
-        // Event listeners
-        document.getElementById('replacementCount').addEventListener('input', calculateReplacement);
-        document.getElementById('replacementHours').addEventListener('change', calculateReplacement);
-        document.getElementById('rdDate').addEventListener('change', calculateReplacement);
-        document.getElementById('unit').addEventListener('change', updateInterfaceBasedOnUnit);
-
-        document.getElementById('photo').addEventListener('change', async (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                try {
-                    const compressedImage = await compressImage(file);
-                    imageBase64 = compressedImage;
-                    const preview = document.getElementById('imagePreview');
-                    preview.src = compressedImage;
-                    preview.style.display = 'block';
-                } catch (error) {
-                    console.error("Erro ao processar imagem:", error);
-                    alert("Erro ao processar a imagem. Por favor, tente novamente.");
+            
+            // Configura os event listeners
+            document.getElementById('replacementCount').addEventListener('input', calculateReplacement);
+            document.getElementById('replacementHours').addEventListener('change', calculateReplacement);
+            document.getElementById('rdDate').addEventListener('change', calculateReplacement);
+            document.getElementById('unit').addEventListener('change', updateInterfaceBasedOnUnit);
+            
+            // Event listener para a foto
+            document.getElementById('photo').addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        showLoader();
+                        imageBase64 = await compressImage(file);
+                        const preview = document.getElementById('imagePreview');
+                        preview.src = imageBase64;
+                        preview.style.display = 'block';
+                        hideLoader();
+                    } catch (error) {
+                        hideLoader();
+                        console.error("Erro ao processar imagem:", error);
+                        alert("Erro ao processar a imagem. Por favor, tente novamente.");
+                    }
                 }
-            }
+            });
+            
+            // Event listener para o formulário
+            document.getElementById('rdForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                showLoader();
+                
+                // Verifica se o usuário está logado
+                if (!currentUser) {
+                    hideLoader();
+                    alert("Você precisa estar logado para enviar o formulário!");
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Verifica se o email foi verificado
+                if (!currentUser.emailVerified) {
+                    hideLoader();
+                    const resend = confirm("Seu email não foi verificado. Deseja reenviar o email de verificação?");
+                    
+                    if (resend) {
+                        try {
+                            await sendEmailVerification(currentUser);
+                            alert("Email de verificação reenviado. Por favor, verifique sua caixa de entrada.");
+                        } catch (error) {
+                            console.error("Erro ao reenviar email de verificação:", error);
+                            alert("Erro ao reenviar email de verificação. Por favor, tente novamente mais tarde.");
+                        }
+                    }
+                    return;
+                }
+                
+                // Coleta os dados do formulário
+                const rdDate = document.getElementById('rdDate').value;
+                const unit = document.getElementById('unit').value;
+                const shift = document.getElementById('shift').value;
+                const responsible = document.getElementById('responsible').value;
+                const attended = document.getElementById('attended').value;
+                const absent = document.getElementById('absent').value;
+                const replacementCount = document.getElementById('replacementCount').value;
+                const replacementHours = document.getElementById('replacementHours').value;
+                const baseHours = replacementCount * replacementHours;
+
+                // Validação básica
+                if (!rdDate || !unit || !responsible || !attended || !absent) {
+                    hideLoader();
+                    alert("Por favor, preencha todos os campos obrigatórios.");
+                    return;
+                }
+
+                // Obtém observações ou lista de faltantes
+                let comments = "";
+                if (unit === "CD CARIACICA") {
+                    const checkboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
+                    const selectedEmployees = Array.from(checkboxes).map(cb => cb.value);
+                    comments = selectedEmployees.length > 0 ? selectedEmployees.join(", ") : "Sem Faltas";
+                } else {
+                    comments = document.getElementById('comments').value;
+                }
+
+                try {
+                    // Prepara os dados para salvar
+                    const recordData = {
+                        rdDate,
+                        unit,
+                        shift,
+                        responsible,
+                        attended: parseInt(attended),
+                        absent: parseInt(absent),
+                        replacementCount: parseInt(replacementCount) || 0,
+                        replacementHours: parseInt(replacementHours) || 2,
+                        baseHours: parseInt(baseHours),
+                        appliedPercentage,
+                        totalHours: totalCalculatedHours,
+                        isSpecialDay,
+                        createdBy: {
+                            email: currentUser.email,
+                            userId: currentUser.uid,
+                            provider: currentUser.providerData[0]?.providerId || "email",
+                            displayName: currentUser.displayName || "Usuário não identificado"
+                        },
+                        comments,
+                        photo: imageBase64 || "",
+                        timestamp: new Date().toISOString()
+                    };
+
+                    // Novo caminho (todos os registros em um único nó)
+                    const rdRecordsPath = `rdRecords/`; 
+                    const reference = ref(database, rdRecordsPath);
+                    const newRecordRef = push(reference);
+
+                    // Adiciona o userId ao registro
+                    const recordDataWithUser = {
+                    ...recordData,
+                    userId: currentUser.uid, // Mantém a referência ao usuário
+                    };
+
+                    await set(newRecordRef, recordDataWithUser);
+
+                    // Feedback para o usuário
+                    hideLoader();
+                    alert("Dados de RD enviados com sucesso!");
+                    
+                    // Reseta o formulário
+                    document.getElementById('rdForm').reset();
+                    document.getElementById('imagePreview').style.display = 'none';
+                    document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+                    document.getElementById('unit').value = "";
+                    document.getElementById('replacementCount').value = 0;
+                    imageBase64 = null;
+                    calculateReplacement();
+                    updateInterfaceBasedOnUnit();
+                    
+                    // Desmarca todos os checkboxes
+                    document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]').forEach(checkbox => {
+                        checkbox.checked = false;
+                    });
+                } catch (error) {
+                    hideLoader();
+                    console.error("Erro ao salvar dados:", error);
+                    
+                    let errorMessage = "Ocorreu um erro ao enviar os dados. Por favor, tente novamente.";
+                    if (error.code === 'PERMISSION_DENIED') {
+                        errorMessage = "Permissão negada. Verifique se você está logado e seu email foi verificado.";
+                    }
+                    
+                    alert(errorMessage);
+                }
+            });
+            
+            // Calcula inicialmente
+            calculateReplacement();
         });
 
-        document.getElementById('rdForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (!currentUser) {
-                alert("Você precisa estar logado para enviar o formulário!");
-                window.location.href = 'login.html';
-                return;
-            }
-
-            const rdDate = document.getElementById('rdDate').value;
-            const unit = document.getElementById('unit').value;
-            const shift = document.getElementById('shift').value;
-            const responsible = document.getElementById('responsible').value;
-            const attended = document.getElementById('attended').value;
-            const absent = document.getElementById('absent').value;
-            const replacementCount = document.getElementById('replacementCount').value;
-            const replacementHours = document.getElementById('replacementHours').value;
-            const baseHours = replacementCount * replacementHours;
-
-            if (!rdDate || !unit || !responsible || !attended || !absent) {
-                alert("Por favor, preencha todos os campos obrigatórios.");
-                return;
-            }
-
-            // Obter observações ou lista de faltantes
-            let comments = "";
-            if (unit === "CD CARIACICA") {
-                const checkboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
-                const selectedEmployees = Array.from(checkboxes).map(cb => cb.value);
-                comments =(selectedEmployees.length > 0 ? selectedEmployees.join(", ") : "Sem Faltas");
+        // Monitora o estado de autenticação
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("Usuário logado:", user);
+                
+                // Verifica se o email foi verificado
+                if (!user.emailVerified) {
+                    alert("Por favor, verifique seu email antes de acessar esta página. Verifique sua caixa de entrada ou spam.");
+                    window.location.href = 'index.html';
+                }
             } else {
-                comments = document.getElementById('comments').value;
-            }
-
-            try {
-                const reference = ref(database, 'rdRecords/');
-                const newRecordRef = push(reference);
-                
-                await set(newRecordRef, {
-                    rdDate,
-                    unit,
-                    shift,
-                    responsible,
-                    attended: parseInt(attended),
-                    absent: parseInt(absent),
-                    replacementCount: parseInt(replacementCount) || 0,
-                    replacementHours: parseInt(replacementHours) || 2,
-                    baseHours: parseInt(baseHours),
-                    appliedPercentage,
-                    totalHours: totalCalculatedHours,
-                    isSpecialDay,
-                    email: currentUser.email,
-                    userId: currentUser.uid,
-                    provider: currentUser.providerData[0]?.providerId || "email",
-                    comments,
-                    photo: imageBase64 || "",
-                    timestamp: new Date().toISOString()
-                });
-
-                alert("Dados de RD enviados com sucesso!");
-                document.getElementById('rdForm').reset();
-                document.getElementById('imagePreview').style.display = 'none';
-                document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
-                document.getElementById('unit').value = "";
-                document.getElementById('replacementCount').value = 0;
-                imageBase64 = null;
-                calculateReplacement();
-                updateInterfaceBasedOnUnit();
-                
-                // Desmarcar todos os checkboxes
-                document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]').forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-            } catch (error) {
-                console.error("Erro ao salvar dados:", error);
-                alert("Ocorreu um erro ao enviar os dados. Por favor, tente novamente.");
+                console.log("Nenhum usuário logado");
+                alert("Você precisa estar logado para acessar esta página!");
+                window.location.href = 'index.html';
             }
         });
-
-        // Calcular inicialmente
-        calculateReplacement();
     </script>
 </body>
 </html>
