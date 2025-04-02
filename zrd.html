@@ -253,12 +253,12 @@
             
             if (isSpecialDay) {
                 appliedPercentage = 100;
-                totalCalculatedHours = baseHours * 2; // 100% de acréscimo
+                totalCalculatedHours = baseHours; // 100% de acréscimo
                 document.getElementById('replacementCalculation').textContent = `${baseHours} horas + 100%`;
                 document.getElementById('holidayInfo').innerHTML = `<span class="warning">⚠️ ${isHolidayToday ? "Feriado nacional" : "Domingo"} - 100% de acréscimo</span>`;
             } else {
                 appliedPercentage = 50;
-                totalCalculatedHours = baseHours * 1.5; // 50% de acréscimo
+                totalCalculatedHours = baseHours; // 50% de acréscimo
                 document.getElementById('replacementCalculation').textContent = `${baseHours} horas + 50%`;
                 document.getElementById('holidayInfo').textContent = "Dia comum - 50% de acréscimo";
             }
