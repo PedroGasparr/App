@@ -8,9 +8,13 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
     
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    
+    <!-- SheetJS para exportar Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <link rel="stylesheet" href="wEXTRAÇÃO.CSS" />
     <title>Painel Principal</title>
@@ -75,6 +79,7 @@
         align-items: center;
         justify-content: center;
         height: 200px;
+        position: relative;
       }
       
       .eliminar-banner {
@@ -114,6 +119,29 @@
       .rd-banner p, .eliminar-banner p {
         margin: 10px 0 0;
         font-size: 16px;
+      }
+      
+      /* Botão de download */
+      .download-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        font-size: 14px;
+      }
+      
+      .download-btn:hover {
+        background-color: rgba(255, 255, 255, 0.3);
       }
       
       /* Responsividade */
@@ -189,6 +217,9 @@
     <!-- Banner para visualização do checklist RD -->
     <div class="banner-container">
       <div class="rd-banner" id="rdBanner">
+        <button class="download-btn" id="downloadBtn" title="Baixar dados">
+          <i class="fas fa-download"></i>
+        </button>
         <i class="fas fa-clipboard-check"></i>
         <h2>Visualização Checklist RDO</h2>
         <p>Clique aqui para acessar os checklists RDO preenchidos</p>
@@ -237,6 +268,31 @@
         document.getElementById('user-photo-placeholder').style.display = 'none';
       };
 
+      // Função para converter dados em XLSX e baixar
+      function downloadXLSX(data) {
+        try {
+          // Excluir o campo 'photo' se existir
+          const filteredData = data.map(item => {
+            const { photo, ...rest } = item;
+            return rest;
+          });
+          
+          // Criar uma nova planilha
+          const ws = XLSX.utils.json_to_sheet(filteredData);
+          
+          // Criar um novo workbook
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Dados RDO");
+          
+          // Gerar o arquivo XLSX com data no nome
+          const dateStr = new Date().toISOString().slice(0, 10);
+          XLSX.writeFile(wb, `dados_rdo_${dateStr}.xlsx`);
+        } catch (error) {
+          console.error("Erro ao gerar XLSX:", error);
+          alert("Ocorreu um erro ao gerar o arquivo Excel.");
+        }
+      }
+
       // Carregar os registros quando a página for carregada
       document.addEventListener('DOMContentLoaded', () => {
         // Verifica se há um nome salvo no localStorage
@@ -249,13 +305,53 @@
         }
         
         // Adiciona evento de clique ao banner RD
-        document.getElementById('rdBanner').addEventListener('click', () => {
-          window.location.href = 'zvisualizacao_checklist_rd.html';
+        document.getElementById('rdBanner').addEventListener('click', (e) => {
+          // Evitar que o clique no botão de download redirecione
+          if (!e.target.closest('.download-btn')) {
+            window.location.href = 'zvisualizacao_checklist_rd.html';
+          }
         });
         
         // Adiciona evento de clique ao banner Eliminar
         document.getElementById('eliminarBanner').addEventListener('click', () => {
           window.location.href = 'Construction.html';
+        });
+        
+        // Adiciona evento de clique ao botão de download
+        document.getElementById('downloadBtn').addEventListener('click', (e) => {
+          e.stopPropagation(); // Impede que o clique no botão dispare o evento do card
+          
+          // Mostrar mensagem de carregamento
+          const originalIcon = document.getElementById('downloadBtn').innerHTML;
+          document.getElementById('downloadBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+          
+          // Buscar dados do Firebase
+          const rdRecordsRef = ref(database, 'rdRecords');
+          onValue(rdRecordsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+              // Converter objeto em array
+              const dataArray = Object.keys(data).map(key => ({
+                id: key,
+                ...data[key]
+              }));
+              
+              // Baixar como XLSX
+              downloadXLSX(dataArray);
+            } else {
+              alert('Nenhum dado encontrado para download.');
+            }
+            
+            // Restaurar ícone original
+            document.getElementById('downloadBtn').innerHTML = originalIcon;
+          }, {
+            onlyOnce: true, // Garante que o listener seja executado apenas uma vez
+            onError: (error) => {
+              console.error("Erro ao buscar dados:", error);
+              alert("Erro ao buscar dados do banco de dados.");
+              document.getElementById('downloadBtn').innerHTML = originalIcon;
+            }
+          });
         });
       });
 
