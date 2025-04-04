@@ -6,7 +6,465 @@
     <title>Registros de RDO</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="icon" href="img/social-media.gif" type="image/x-icon">
-    <link rel="stylesheet" href="wvisualizacao_checklist_eliminar.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        /* Container principal */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Cards lado a lado */
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        /* Estilo dos cards */
+        .record-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            transition: var(--transition);
+            border: 1px solid var(--light-gray);
+            position: relative;
+        }
+
+        .record-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header-content {
+            flex-grow: 1;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: var(--transition);
+            margin-left: 15px;
+            padding: 5px;
+        }
+
+        .delete-btn:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            margin-bottom: 12px;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: var(--gray);
+            width: 180px;
+            flex-shrink: 0;
+        }
+
+        .info-value {
+            flex-grow: 1;
+        }
+
+        .highlight {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .danger-highlight {
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        .warning-highlight {
+            color: var(--warning);
+            font-weight: 500;
+        }
+
+        /* Estilo para lista de faltantes/atestados */
+        .absent-list {
+            margin-top: 10px;
+            background: var(--light);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            border: 1px dashed var(--gray);
+        }
+
+        .absent-employee {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .absence-type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .absence-falta {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .absence-atestado {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Responsividade - 1 card por linha em telas menores */
+        @media (max-width: 768px) {
+            .records-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Restante do CSS permanece igual */
+        .login-container, .verify-email-message {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+
+        .login-container h2, .verify-email-message h3 {
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .login-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .login-button, .verify-email-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: var(--transition);
+        }
+
+        .login-button:hover, .verify-email-button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .login-message {
+            margin-top: 15px;
+            color: var(--danger);
+            font-size: 14px;
+        }
+
+        #appContainer {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .logout-button:hover {
+            background-color: #d51a6a;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background-color: var(--light);
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .filter-group {
+            margin-bottom: 0;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            background-color: white;
+        }
+
+        .records-container {
+            padding: 20px;
+        }
+
+        .loading, .no-records {
+            text-align: center;
+            padding: 30px;
+            color: var(--gray);
+        }
+
+        .photo-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .record-photo {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--light-gray);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .total-team {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--light-gray);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 400px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .password-modal h3 {
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+
+        .password-modal input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+        }
+
+        .password-modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .password-modal-cancel, .password-modal-confirm {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .password-modal-cancel {
+            background-color: var(--gray);
+            color: white;
+        }
+
+        .password-modal-cancel:hover {
+            background-color: #5a6268;
+        }
+
+        .password-modal-confirm {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .password-modal-confirm:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--box-shadow);
+            z-index: 100;
+        }
+
+        .connection-status.connected {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .connection-status.waiting {
+            background-color: #fff8e1;
+            color: #ff8f00;
+        }
+
+        .connection-status.disconnected {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .connected .indicator {
+            background-color: #2e7d32;
+        }
+
+        .waiting .indicator {
+            background-color: #ff8f00;
+        }
+
+        .disconnected .indicator {
+            background-color: #c62828;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .login-container, .verify-email-message {
+                margin: 20px auto;
+                padding: 20px;
+            }
+            
+            .logout-button {
+                position: static;
+                margin-top: 15px;
+                display: block;
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Login Container -->
@@ -191,9 +649,9 @@
             if (!record.replacementCount || !record.replacementHours) return '';
             
             const absent = parseInt(record.absent) || 0;
-            const baseHours = record.baseHours || 8;
+            const totalReplacementHours = record.totalReplacementHours || 0;
             const percentage = record.appliedPercentage || (record.isSpecialDay ? 100 : 50);
-            const totalHours = record.totalHours || baseHours * (percentage === 100 ? 2 : 1.5);
+            const totalHours = record.totalHours || 0;
             
             const horasPerdidas = absent * 8;
             const horasRepostas = totalHours;
@@ -220,7 +678,7 @@
                 </div>
                 <div class="info-row">
                     <span class="info-label">Horas por pessoa:</span>
-                    <span class="info-value">${record.replacementHours} horas</span>
+                    <span class="info-value">${Array.isArray(record.replacementHours) ? record.replacementHours.join(', ') : record.replacementHours} horas</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Total de horas:</span>
@@ -229,30 +687,44 @@
             `;
         }
 
-        // Format absent employees list
+        // Format absent employees list with type (falta/atestado)
         function formatAbsentEmployees(comments) {
             if (!comments) return '';
             
             try {
-                // Remove prefix if exists
-                const employeesString = comments.replace(/^Faltantes:\s*/i, '');
+                // Check if it's a list with absence types (from CD Cariacica)
+                if (comments.includes('(falta)') || comments.includes('(atestado)')) {
+                    const employees = comments.split(', ')
+                        .map(e => e.trim())
+                        .filter(e => e);
+                    
+                    if (employees.length === 0) return '';
+                    
+                    return `
+                        <div class="absent-list">
+                            <div class="absent-list-title">Funcionários ausentes:</div>
+                            ${employees.map(e => {
+                                const isAtestado = e.includes('(atestado)');
+                                const employeeName = e.replace(/\s*\((falta|atestado)\)$/, '');
+                                const badgeClass = isAtestado ? 'absence-atestado' : 'absence-falta';
+                                const badgeText = isAtestado ? 'Atestado' : 'Falta';
+                                
+                                return `
+                                    <div class="absent-employee">
+                                        ${employeeName}
+                                        <span class="absence-type-badge ${badgeClass}">${badgeText}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                }
                 
-                // Split names and clean
-                const employees = employeesString.split(',')
-                    .map(e => e.trim())
-                    .filter(e => e);
-                
-                if (employees.length === 0) return '';
-                
-                // Check if we should display as comma separated
-                const commaSeparated = employeesString.includes(',') && employees.length > 3;
-                
+                // For other units or old format
                 return `
-                    <div class="absent-list ${commaSeparated ? 'comma-separated' : ''}">
-                        <div class="absent-list-title">Funcionários ausentes:</div>
-                        ${employees.map(e => 
-                            `<div class="absent-employee">${e}</div>`
-                        ).join('')}
+                    <div class="absent-list">
+                        <div class="absent-list-title">Observações:</div>
+                        <div>${comments}</div>
                     </div>
                 `;
             } catch (e) {
@@ -294,6 +766,11 @@
                 recordsContainer.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
                 return;
             }
+
+            // Create grid container
+            const recordsGrid = document.createElement('div');
+            recordsGrid.className = 'records-grid';
+            recordsContainer.appendChild(recordsGrid);
     
             filteredRecords.forEach(record => {
                 const effectiveAbsent = calculateEffectiveAbsent(record);
@@ -302,9 +779,11 @@
                 const recordCard = document.createElement('div');
                 recordCard.className = 'record-card';
                 recordCard.innerHTML = `
-                    <button class="delete-btn" data-record-id="${record.key}">🗑️</button>
                     <div class="card-header">
-                        ${formatDisplayDate(record.rdDate)} - ${record.unit || 'Sem unidade'}
+                        <div class="card-header-content">
+                            ${formatDisplayDate(record.rdDate)} - ${record.unit || 'Sem unidade'}
+                        </div>
+                        <button class="delete-btn" data-record-id="${record.key}">🗑️</button>
                     </div>
                     <div class="card-body">
                         <div class="info-row">
@@ -338,7 +817,7 @@
                         
                         ${record.comments ? `
                         <div class="info-row">
-                            <span class="info-label">Faltantes:</span>
+                            <span class="info-label">${record.unit === 'CD CARIACICA' ? 'Faltantes' : 'Observações'}:</span>
                             <div class="info-value">
                                 ${formatAbsentEmployees(record.comments)}
                             </div>
@@ -357,7 +836,7 @@
                     </div>
                 `;
                 
-                recordsContainer.appendChild(recordCard);
+                recordsGrid.appendChild(recordCard);
             });
 
             // Add delete button event listeners
