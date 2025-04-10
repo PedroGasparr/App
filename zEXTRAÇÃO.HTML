@@ -6,7 +6,7 @@
     <link rel="icon" href="img/social-media.gif" type="image/x-icon">
     
     <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
@@ -81,6 +81,24 @@
         height: 200px;
         position: relative;
       }
+      .rd-banner-1 {
+        background: linear-gradient(135deg, #04fe96 0%, #6beb44 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        position: relative;
+      }
       
       .eliminar-banner {
         background: linear-gradient(135deg, #fe4f4f 0%, #eb4444 100%);
@@ -100,23 +118,43 @@
         height: 200px;
       }
       
-      .rd-banner:hover, .eliminar-banner:hover {
+      /* Novo estilo para o banner de avarias */
+      .avarias-banner {
+        background: linear-gradient(135deg, #d2d53a 0%, #ff5100 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        position: relative;
+      }
+      
+      .rd-banner:hover, .eliminar-banner:hover, .avarias-banner:hover,.rd-banner-1:hover {
         transform: translateY(-5px);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
       }
       
-      .rd-banner i, .eliminar-banner i {
+      .rd-banner i, .eliminar-banner i, .avarias-banner i,.rd-banner-1 i{
         font-size: 48px;
         margin-bottom: 15px;
       }
       
-      .rd-banner h2, .eliminar-banner h2 {
+      .rd-banner h2, .eliminar-banner h2, .avarias-banner h2, .rd-banner-1 h2{
         margin: 0;
         font-size: 24px;
         font-weight: 600;
       }
       
-      .rd-banner p, .eliminar-banner p {
+      .rd-banner p, .eliminar-banner p, .avarias-banner p ,.rd-banner-1 p{
         margin: 10px 0 0;
         font-size: 16px;
       }
@@ -151,19 +189,19 @@
           padding: 15px;
         }
         
-        .rd-banner, .eliminar-banner {
+        .rd-banner, .eliminar-banner, .avarias-banner,.rd-banner-1 {
           height: 180px;
         }
         
-        .rd-banner i, .eliminar-banner i {
+        .rd-banner i, .eliminar-banner i, .avarias-banner i,.rd-banner-1 i {
           font-size: 40px;
         }
         
-        .rd-banner h2, .eliminar-banner h2 {
+        .rd-banner h2, .eliminar-banner h2, .avarias-banner h2,.rd-banner-1 h2 {
           font-size: 20px;
         }
         
-        .rd-banner p, .eliminar-banner p {
+        .rd-banner p, .eliminar-banner p, .avarias-banner p , .rd-banner-1 p{
           font-size: 14px;
         }
       }
@@ -174,16 +212,16 @@
           padding: 10px;
         }
         
-        .rd-banner, .eliminar-banner {
+        .rd-banner, .eliminar-banner, .avarias-banner , .rd-banner-1{
           height: 160px;
           padding: 15px;
         }
         
-        .rd-banner i, .eliminar-banner i {
+        .rd-banner i, .eliminar-banner i, .avarias-banner i, .rd-banner-1 i {
           font-size: 36px;
         }
         
-        .rd-banner h2, .eliminar-banner h2 {
+        .rd-banner h2, .eliminar-banner h2, .avarias-banner h2 ,.rd-banner-1 h2 {
           font-size: 18px;
         }
       }
@@ -205,9 +243,9 @@
         <li class="has-submenu">
           <a href="#" id="checklistToggle">Checklist ▾</a>
           <ul class="submenu" id="checklistMenu">
-            <li><a href="Construction.html">Checklist de Limpeza</a></li>
+            <li><a href="zocoorencia.html">Checklist de Avaria</a></li>
             <li><a href="zrd.html">Checklist RDO</a></li>
-            <li><a href="Construction.html">Comunicação de Ocorrência</a></li>
+            <li><a href="zacidente.html">Comunicação de Ocorrência</a></li>
           </ul>
         </li>
         <li><a href="zEXTRAÇÃO.HTML">Extração</a></li>
@@ -224,12 +262,25 @@
         <h2>Visualização Checklist RDO</h2>
         <p>Clique aqui para acessar os checklists RDO preenchidos</p>
       </div>
+
+      <div class="rd-banner-1" id="rd-banner-1">
+        <i class="fa fa-area-chart"></i>
+        <h2>Dashboard Checklist RDO</h2>
+        <p>Clique aqui para acessar</p>
+      </div>
       
-      <!-- Novo banner para visualização de checklists a eliminar -->
+      <!-- Banner para visualização de checklists a eliminar -->
       <div class="eliminar-banner" id="eliminarBanner">
         <i class="fas fa-shield-alt"></i>
-        <h2>Visualização Checklist Pré-Eliminar</h2>
+        <h2>Dashboard de Ocorrências</h2>
         <p>Clique aqui para acessar os checklists</p>
+      </div>
+      
+      <!-- Novo banner para dashboard de avarias -->
+      <div class="avarias-banner" id="avariasBanner">
+        <i class="fas fa-chart-line"></i>
+        <h2>Dashboard de Avarias</h2>
+        <p>Clique aqui para acessar análises detalhadas das avarias</p>
       </div>
     </div>
 
@@ -311,10 +362,21 @@
             window.location.href = 'zvisualizacao_checklist_rd.html';
           }
         });
+        document.getElementById('rd-banner-1').addEventListener('click', (e) => {
+          // Evitar que o clique no botão de download redirecione
+          if (!e.target.closest('.download-btn')) {
+            window.location.href = 'zdashboardrdo.html';
+          }
+        });
         
         // Adiciona evento de clique ao banner Eliminar
         document.getElementById('eliminarBanner').addEventListener('click', () => {
-          window.location.href = 'Construction.html';
+          window.location.href = 'zdashboardocorrencia.html';
+        });
+        
+        // Adiciona evento de clique ao novo banner de Avarias
+        document.getElementById('avariasBanner').addEventListener('click', () => {
+          window.location.href = 'zdashboardavaria.html'; // Substitua pelo nome do seu arquivo da dashboard
         });
         
         // Adiciona evento de clique ao botão de download

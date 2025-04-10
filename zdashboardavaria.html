@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Avarias - Suzano</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --light-color: #ecf0f1;
+    --dark-color: #34495e;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    flex: 1;
+}
+
+.header {
+    background-color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-weight: 600;
+    padding: 15px 20px;
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 20px;
+}
+
+.stat-card .value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 10px 0;
+}
+
+.stat-card .label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.level-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.level-1 {
+    background-color: #e6f7ff;
+    color: #004085;
+}
+
+.level-2 {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.level-3 {
+    background-color: #ffeeba;
+    color: #856404;
+}
+
+.level-4 {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.level-5 {
+    background-color: #dc3545;
+    color: white;
+}
+
+.table-responsive {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: var(--light-color);
+    border-bottom: none;
+    padding: 15px;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.table tbody td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 5px 10px;
+}
+
+.photo-thumbnail {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.photo-thumbnail:hover {
+    transform: scale(1.1);
+}
+
+.modal-image {
+    max-width: 100%;
+    max-height: 80vh;
+}
+
+.filter-section {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--secondary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.pagination .page-link {
+    color: var(--secondary-color);
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box input {
+    padding-left: 35px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    top: 10px;
+    color: #7f8c8d;
+}
+
+</style>
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h4 class="mb-0">Dashboard de Avarias</h4>
+            <div class="user-info">
+                <div class="avatar">PH</div>
+                <span>Pedro Henrique</span>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="date-range" class="form-label">Período</label>
+                    <select id="date-range" class="form-select">
+                        <option value="7">Últimos 7 dias</option>
+                        <option value="30" selected>Últimos 30 dias</option>
+                        <option value="90">Últimos 3 meses</option>
+                        <option value="custom">Personalizado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="location-filter" class="form-label">Local</label>
+                    <select id="location-filter" class="form-select">
+                        <option value="">Todos os locais</option>
+                        <option value="Fabrica Suzano Belem">Fábrica Suzano Belém</option>
+                        <option value="Fabrica Suzano Limeira">Fábrica Suzano Limeira</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="level-filter" class="form-label">Nível de Gravidade</label>
+                    <select id="level-filter" class="form-select">
+                        <option value="">Todos os níveis</option>
+                        <option value="1">Nível 1</option>
+                        <option value="2">Nível 2</option>
+                        <option value="3">Nível 3</option>
+                        <option value="4">Nível 4</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="type-filter" class="form-label">Tipo de Avaria</label>
+                    <select id="type-filter" class="form-select">
+                        <option value="">Todos os tipos</option>
+                        <option value="Máquinas/Equipamentos">Máquinas/Equipamentos</option>
+                        <option value="Estruturas">Estruturas</option>
+                        <option value="Materiais">Materiais</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                        <div class="value" id="total-avarias">0</div>
+                        <div class="label">Total de Avarias</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <i class="fas fa-industry fa-2x text-primary"></i>
+                        <div class="value" id="maquinas-avarias">0</div>
+                        <div class="label">Avarias em Máquinas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <i class="fas fa-building fa-2x text-secondary"></i>
+                        <div class="value" id="estruturas-avarias">0</div>
+                        <div class="label">Avarias em Estruturas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <i class="fas fa-boxes fa-2x text-info"></i>
+                        <div class="value" id="materiais-avarias">0</div>
+                        <div class="label">Avarias em Materiais</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar me-2"></i>Avarias por Tipo
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="typeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-line me-2"></i>Tendência Mensal de Avarias
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level Distribution and Shift Analysis -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-pie me-2"></i>Distribuição por Nível de Gravidade
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="levelChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-clock me-2"></i>Avarias por Turno
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="shiftChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Avarias Table -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-list me-2"></i>Últimas Avarias Registradas
+                </div>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-avarias" class="form-control form-control-sm" placeholder="Pesquisar...">
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Local</th>
+                                <th>Tipo</th>
+                                <th>Nível</th>
+                                <th>Responsável</th>
+                                <th>Turno</th>
+                                <th>Fotos</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="avarias-table-body">
+                            <!-- Dados serão preenchidos via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <nav aria-label="Page navigation" class="mt-3">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Paginação será gerada via JavaScript -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para detalhes da avaria -->
+    <div class="modal fade" id="avariaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalhes da Avaria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="avaria-details">
+                    <!-- Conteúdo será preenchido via JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para visualização de foto -->
+    <div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Foto da Avaria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modal-photo" src="" class="modal-image" alt="Foto da Avaria">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Firebase scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.firebasestorage.app",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // Variáveis globais
+        let allDamages = [];
+        let filteredDamages = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        
+        // Inicialização do dashboard quando o DOM estiver carregado
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verifica autenticação
+            auth.onAuthStateChanged(user => {
+                if (!user) {
+                    window.location.href = '/login.html';
+                } else {
+                    loadDamagesData();
+                }
+            });
+            
+            // Configura listeners para os filtros
+            document.getElementById('date-range').addEventListener('change', applyFilters);
+            document.getElementById('location-filter').addEventListener('change', applyFilters);
+            document.getElementById('level-filter').addEventListener('change', applyFilters);
+            document.getElementById('type-filter').addEventListener('change', applyFilters);
+            document.getElementById('search-avarias').addEventListener('input', applyFilters);
+            
+            // Inicializa os gráficos vazios
+            initCharts();
+        });
+        
+        // Carrega os dados do Firebase
+        function loadDamagesData() {
+            const damagesRef = database.ref('damages');
+            
+            damagesRef.orderByChild('timestamp').once('value').then(snapshot => {
+                allDamages = [];
+                snapshot.forEach(childSnapshot => {
+                    const damage = childSnapshot.val();
+                    damage.id = childSnapshot.key;
+                    allDamages.unshift(damage); // Adiciona no início para ter os mais recentes primeiro
+                });
+                
+                applyFilters();
+            }).catch(error => {
+                console.error("Erro ao carregar dados:", error);
+            });
+        }
+        
+        // Aplica os filtros selecionados
+        function applyFilters() {
+            filteredDamages = [...allDamages];
+            
+            // Filtro por período
+            const dateRange = document.getElementById('date-range').value;
+            if (dateRange !== 'custom') {
+                const days = parseInt(dateRange);
+                if (!isNaN(days)) {
+                    const cutoffDate = new Date();
+                    cutoffDate.setDate(cutoffDate.getDate() - days);
+                    filteredDamages = filteredDamages.filter(damage => {
+                        const damageDate = new Date(damage.date);
+                        return damageDate >= cutoffDate;
+                    });
+                }
+            }
+            
+            // Filtro por local
+            const locationFilter = document.getElementById('location-filter').value;
+            if (locationFilter) {
+                filteredDamages = filteredDamages.filter(damage => damage.location === locationFilter);
+            }
+            
+            // Filtro por nível
+            const levelFilter = document.getElementById('level-filter').value;
+            if (levelFilter) {
+                filteredDamages = filteredDamages.filter(damage => damage.level.toString() === levelFilter);
+            }
+            
+            // Filtro por tipo
+            const typeFilter = document.getElementById('type-filter').value;
+            if (typeFilter) {
+                filteredDamages = filteredDamages.filter(damage => damage.damageType.includes(typeFilter));
+            }
+            
+            // Filtro por pesquisa
+            const searchTerm = document.getElementById('search-avarias').value.toLowerCase();
+            if (searchTerm) {
+                filteredDamages = filteredDamages.filter(damage => 
+                    (damage.responsibleName && damage.responsibleName.toLowerCase().includes(searchTerm)) ||
+                    (damage.location && damage.location.toLowerCase().includes(searchTerm)) ||
+                    (damage.assetCode && damage.assetCode.toLowerCase().includes(searchTerm)) ||
+                    (damage.answers.q1_equipment && damage.answers.q1_equipment.toLowerCase().includes(searchTerm)) ||
+                    (damage.answers.q2_area && damage.answers.q2_area.toLowerCase().includes(searchTerm)) ||
+                    (damage.answers.q3_material && damage.answers.q3_material.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Atualiza as estatísticas e gráficos
+            updateStats();
+            updateCharts();
+            updateTable();
+        }
+        
+        // Atualiza as estatísticas
+        function updateStats() {
+            document.getElementById('total-avarias').textContent = filteredDamages.length;
+            
+            const maquinasCount = filteredDamages.filter(d => d.damageType.includes('Máquinas')).length;
+            const estruturasCount = filteredDamages.filter(d => d.damageType.includes('Estruturas')).length;
+            const materiaisCount = filteredDamages.filter(d => d.damageType.includes('Materiais')).length;
+            
+            document.getElementById('maquinas-avarias').textContent = maquinasCount;
+            document.getElementById('estruturas-avarias').textContent = estruturasCount;
+            document.getElementById('materiais-avarias').textContent = materiaisCount;
+        }
+        
+        // Inicializa os gráficos
+        function initCharts() {
+            // Gráfico de tipos de avaria
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            window.typeChart = new Chart(typeCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Máquinas', 'Estruturas', 'Materiais'],
+                    datasets: [{
+                        label: 'Quantidade',
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(155, 89, 182, 0.7)',
+                            'rgba(46, 204, 113, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(155, 89, 182, 1)',
+                            'rgba(46, 204, 113, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico de tendência mensal
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            window.trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Avarias por mês',
+                        data: [],
+                        fill: false,
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico de níveis de gravidade
+            const levelCtx = document.getElementById('levelChart').getContext('2d');
+            window.levelChart = new Chart(levelCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Nível 1', 'Nível 2', 'Nível 3', 'Nível 4'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            'rgba(0, 123, 255, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(255, 152, 0, 0.7)',
+                            'rgba(220, 53, 69, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico de turnos
+            const shiftCtx = document.getElementById('shiftChart').getContext('2d');
+            window.shiftChart = new Chart(shiftCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Manhã', 'Tarde', 'Noite'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(41, 128, 185, 0.7)',
+                            'rgba(39, 174, 96, 0.7)',
+                            'rgba(142, 68, 173, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Atualiza os gráficos com os dados filtrados
+        function updateCharts() {
+            // Atualiza gráfico de tipos
+            const maquinasCount = filteredDamages.filter(d => d.damageType.includes('Máquinas')).length;
+            const estruturasCount = filteredDamages.filter(d => d.damageType.includes('Estruturas')).length;
+            const materiaisCount = filteredDamages.filter(d => d.damageType.includes('Materiais')).length;
+            
+            window.typeChart.data.datasets[0].data = [maquinasCount, estruturasCount, materiaisCount];
+            window.typeChart.update();
+            
+            // Atualiza gráfico de tendência mensal
+            const monthlyData = {};
+            filteredDamages.forEach(damage => {
+                const date = new Date(damage.date);
+                const monthYear = `${date.getMonth()+1}/${date.getFullYear()}`;
+                
+                if (!monthlyData[monthYear]) {
+                    monthlyData[monthYear] = 0;
+                }
+                monthlyData[monthYear]++;
+            });
+            
+            const sortedMonths = Object.keys(monthlyData).sort((a, b) => {
+                const [aMonth, aYear] = a.split('/').map(Number);
+                const [bMonth, bYear] = b.split('/').map(Number);
+                return aYear === bYear ? aMonth - bMonth : aYear - bYear;
+            });
+            
+            window.trendChart.data.labels = sortedMonths;
+            window.trendChart.data.datasets[0].data = sortedMonths.map(month => monthlyData[month]);
+            window.trendChart.update();
+            
+            // Atualiza gráfico de níveis
+            const level1 = filteredDamages.filter(d => d.level === 1).length;
+            const level2 = filteredDamages.filter(d => d.level === 2).length;
+            const level3 = filteredDamages.filter(d => d.level === 3).length;
+            const level4 = filteredDamages.filter(d => d.level === 4).length;
+            
+            window.levelChart.data.datasets[0].data = [level1, level2, level3, level4];
+            window.levelChart.update();
+            
+            // Atualiza gráfico de turnos
+            const manha = filteredDamages.filter(d => d.shift === 'Manhã').length;
+            const tarde = filteredDamages.filter(d => d.shift === 'Tarde').length;
+            const noite = filteredDamages.filter(d => d.shift === 'Noite').length;
+            
+            window.shiftChart.data.datasets[0].data = [manha, tarde, noite];
+            window.shiftChart.update();
+        }
+        
+        // Atualiza a tabela com os dados filtrados
+        function updateTable() {
+            currentPage = 1;
+            renderTablePage();
+            renderPagination();
+        }
+        
+        // Renderiza uma página da tabela
+        function renderTablePage() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageDamages = filteredDamages.slice(startIndex, endIndex);
+            
+            const tableBody = document.getElementById('avarias-table-body');
+            tableBody.innerHTML = '';
+            
+            if (pageDamages.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhuma avaria encontrada</td></tr>';
+                return;
+            }
+            
+            pageDamages.forEach(damage => {
+                const row = document.createElement('tr');
+                
+                // Data/Hora
+                const dateCell = document.createElement('td');
+                const date = new Date(damage.date);
+                dateCell.textContent = date.toLocaleString('pt-BR');
+                row.appendChild(dateCell);
+                
+                // Local
+                const locationCell = document.createElement('td');
+                locationCell.textContent = damage.location;
+                row.appendChild(locationCell);
+                
+                // Tipo
+                const typeCell = document.createElement('td');
+                typeCell.textContent = damage.damageType;
+                row.appendChild(typeCell);
+                
+                // Nível
+                const levelCell = document.createElement('td');
+                const levelBadge = document.createElement('span');
+                levelBadge.className = `level-badge level-${damage.level}`;
+                levelBadge.textContent = `Nível ${damage.level}`;
+                levelCell.appendChild(levelBadge);
+                row.appendChild(levelCell);
+                
+                // Responsável
+                const responsibleCell = document.createElement('td');
+                responsibleCell.textContent = damage.responsibleName;
+                row.appendChild(responsibleCell);
+                
+                // Turno
+                const shiftCell = document.createElement('td');
+                shiftCell.textContent = damage.shift;
+                row.appendChild(shiftCell);
+                
+                // Fotos
+                const photosCell = document.createElement('td');
+                if (damage.photos && damage.photos.length > 0) {
+                    const firstPhoto = damage.photos[0];
+                    const img = document.createElement('img');
+                    img.src = firstPhoto;
+                    img.className = 'photo-thumbnail';
+                    img.onclick = () => showPhotoModal(firstPhoto);
+                    
+                    if (damage.photos.length > 1) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-secondary ms-1';
+                        badge.textContent = `+${damage.photos.length - 1}`;
+                        photosCell.appendChild(img);
+                        photosCell.appendChild(badge);
+                    } else {
+                        photosCell.appendChild(img);
+                    }
+                } else {
+                    photosCell.textContent = 'Nenhuma';
+                }
+                row.appendChild(photosCell);
+                
+                // Ações
+                const actionsCell = document.createElement('td');
+                const viewBtn = document.createElement('button');
+                viewBtn.className = 'btn btn-sm btn-primary';
+                viewBtn.innerHTML = '<i class="fas fa-eye"></i>';
+                viewBtn.onclick = () => showDamageDetails(damage);
+                actionsCell.appendChild(viewBtn);
+                row.appendChild(actionsCell);
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Renderiza a paginação
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredDamages.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+            
+            // Botão Anterior
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            const prevLink = document.createElement('a');
+            prevLink.className = 'page-link';
+            prevLink.href = '#';
+            prevLink.innerHTML = '&laquo;';
+            prevLink.onclick = (e) => {
+                e.preventDefault();
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTablePage();
+                    renderPagination();
+                }
+            };
+            prevLi.appendChild(prevLink);
+            pagination.appendChild(prevLi);
+            
+            // Páginas
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            // Botão para primeira página
+            if (startPage > 1) {
+                const firstLi = document.createElement('li');
+                firstLi.className = 'page-item';
+                const firstLink = document.createElement('a');
+                firstLink.className = 'page-link';
+                firstLink.href = '#';
+                firstLink.textContent = '1';
+                firstLink.onclick = (e) => {
+                    e.preventDefault();
+                    currentPage = 1;
+                    renderTablePage();
+                    renderPagination();
+                };
+                firstLi.appendChild(firstLink);
+                pagination.appendChild(firstLi);
+
+                if (startPage > 2) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    const ellipsisSpan = document.createElement('span');
+                    ellipsisSpan.className = 'page-link';
+                    ellipsisSpan.textContent = '...';
+                    ellipsisLi.appendChild(ellipsisSpan);
+                    pagination.appendChild(ellipsisLi);
+                }
+            }
+
+            // Páginas visíveis
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                const pageLink = document.createElement('a');
+                pageLink.className = 'page-link';
+                pageLink.href = '#';
+                pageLink.textContent = i;
+                pageLink.onclick = (e) => {
+                    e.preventDefault();
+                    currentPage = i;
+                    renderTablePage();
+                    renderPagination();
+                };
+                pageLi.appendChild(pageLink);
+                pagination.appendChild(pageLi);
+            }
+
+            // Botão para última página
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    const ellipsisSpan = document.createElement('span');
+                    ellipsisSpan.className = 'page-link';
+                    ellipsisSpan.textContent = '...';
+                    ellipsisLi.appendChild(ellipsisSpan);
+                    pagination.appendChild(ellipsisLi);
+                }
+
+                const lastLi = document.createElement('li');
+                lastLi.className = 'page-item';
+                const lastLink = document.createElement('a');
+                lastLink.className = 'page-link';
+                lastLink.href = '#';
+                lastLink.textContent = totalPages;
+                lastLink.onclick = (e) => {
+                    e.preventDefault();
+                    currentPage = totalPages;
+                    renderTablePage();
+                    renderPagination();
+                };
+                lastLi.appendChild(lastLink);
+                pagination.appendChild(lastLi);
+            }
+
+            // Botão Próximo
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            const nextLink = document.createElement('a');
+            nextLink.className = 'page-link';
+            nextLink.href = '#';
+            nextLink.innerHTML = '&raquo;';
+            nextLink.onclick = (e) => {
+                e.preventDefault();
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTablePage();
+                    renderPagination();
+                }
+            };
+            nextLi.appendChild(nextLink);
+            pagination.appendChild(nextLi);
+            }
+
+            // Mostra os detalhes de uma avaria no modal
+            function showDamageDetails(damage) {
+            const modalBody = document.getElementById('avaria-details');
+
+            // Formata a data
+            const date = new Date(damage.date);
+            const formattedDate = date.toLocaleString('pt-BR');
+
+            // Cria o HTML com os detalhes
+            let detailsHTML = `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Informações Básicas</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="fw-bold">Data/Hora:</span>
+                                <span>${formattedDate}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="fw-bold">Local:</span>
+                                <span>${damage.location || 'N/A'}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="fw-bold">Tipo:</span>
+                                <span>${damage.damageType || 'N/A'}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="fw-bold">Nível:</span>
+                                <span class="level-badge level-${damage.level}">Nível ${damage.level}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="fw-bold">Turno:</span>
+                                <span>${damage.shift || 'N/A'}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="fw-bold">Responsável:</span>
+                                <span>${damage.responsibleName || 'N/A'}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Detalhes Técnicos</h6>
+                        <ul class="list-group list-group-flush">
+            `;
+
+            // Adiciona as respostas do formulário
+            if (damage.answers) {
+                for (const [key, value] of Object.entries(damage.answers)) {
+                    const questionText = getQuestionText(key);
+                    detailsHTML += `
+                        <li class="list-group-item">
+                            <div class="fw-bold">${questionText}</div>
+                            <div>${value || 'N/A'}</div>
+                        </li>
+                    `;
+                }
+            }
+
+            detailsHTML += `
+                        </ul>
+                    </div>
+                </div>
+            `;
+
+            // Adiciona as fotos se existirem
+            if (damage.photos && damage.photos.length > 0) {
+                detailsHTML += `
+                    <h6 class="mt-4">Fotos da Avaria</h6>
+                    <div class="row">
+                `;
+
+                damage.photos.forEach((photo, index) => {
+                    detailsHTML += `
+                        <div class="col-md-3 mb-3">
+                            <img src="${photo}" class="img-thumbnail photo-thumbnail" style="cursor: pointer" 
+                                onclick="showPhotoModal('${photo}')" alt="Foto ${index + 1}">
+                        </div>
+                    `;
+                });
+
+                detailsHTML += `</div>`;
+            }
+
+            // Adiciona ações se necessário
+            detailsHTML += `
+                <div class="mt-3">
+                    <button class="btn btn-danger me-2">
+                        <i class="fas fa-trash-alt me-1"></i> Excluir
+                    </button>
+                    <button class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i> Editar
+                    </button>
+                </div>
+            `;
+
+            modalBody.innerHTML = detailsHTML;
+
+            // Mostra o modal
+            const modal = new bootstrap.Modal(document.getElementById('avariaModal'));
+            modal.show();
+            }
+
+            // Função auxiliar para obter o texto da pergunta com base na chave
+            function getQuestionText(key) {
+            const questions = {
+                'q1_equipment': '1. Qual equipamento apresentou a avaria?',
+                'q2_area': '2. Em qual área/local ocorreu a avaria?',
+                'q3_material': '3. Qual material estava envolvido?',
+                'q4_description': '4. Descreva detalhadamente a avaria:',
+                'q5_cause': '5. Qual a possível causa da avaria?',
+                'q6_action': '6. Qual ação imediata foi tomada?',
+                'q7_prevention': '7. Que medidas preventivas podem ser implementadas?'
+            };
+
+            return questions[key] || key;
+            }
+
+            // Mostra uma foto em um modal maior
+            function showPhotoModal(photoUrl) {
+            document.getElementById('modal-photo').src = photoUrl;
+            const modal = new bootstrap.Modal(document.getElementById('photoModal'));
+            modal.show();
+            }
+
+            // Adiciona a função showPhotoModal ao escopo global para ser acessível no HTML
+            window.showPhotoModal = showPhotoModal;
+            </script>
+</body>
+</html>

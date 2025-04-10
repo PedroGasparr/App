@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard RDO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="icon" href="img/social-media.gif" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        /* Container principal */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .header h1 {
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .logout-button:hover {
+            background-color: #d51a6a;
+        }
+
+        /* Filtros */
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background-color: var(--light);
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .filter-group {
+            margin-bottom: 0;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            background-color: white;
+        }
+
+        /* Dashboard */
+        .dashboard-container {
+            background: white;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            border: 1px solid var(--light-gray);
+            transition: var(--transition);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .metric-title {
+            font-size: 16px;
+            color: var(--gray);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .metric-detail {
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .metric-positive {
+            color: var(--success);
+        }
+
+        .metric-negative {
+            color: var(--danger);
+        }
+
+        .metric-neutral {
+            color: var(--warning);
+        }
+
+        /* Charts */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            border: 1px solid var(--light-gray);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--dark);
+            text-align: center;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Tabela de resumo */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .summary-table th, .summary-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .summary-table th {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 500;
+        }
+
+        .summary-table tr:nth-child(even) {
+            background-color: var(--light);
+        }
+
+        .summary-table tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--box-shadow);
+            z-index: 100;
+        }
+
+        .connection-status.connected {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .connection-status.waiting {
+            background-color: #fff8e1;
+            color: #ff8f00;
+        }
+
+        .connection-status.disconnected {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .connected .indicator {
+            background-color: #2e7d32;
+        }
+
+        .waiting .indicator {
+            background-color: #ff8f00;
+        }
+
+        .disconnected .indicator {
+            background-color: #c62828;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .logout-button {
+                position: static;
+                margin-top: 15px;
+                display: block;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- App Container -->
+    <div id="appContainer" class="container">
+        <div class="dashboard-container">
+            <div class="header">
+                <h1>Dashboard RDO</h1>
+                <p>Análise de faltas e horas por período</p>
+                <button id="logoutButton" class="logout-button">Sair</button>
+            </div>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="unitFilter">Filtrar por Unidade:</label>
+                    <select id="unitFilter">
+                        <option value="">Todas as unidades</option>
+                        <option value="FABRICA LIMEIRA">Fábrica Limeira</option>
+                        <option value="CD CARIACICA">CD Cariacica</option>
+                        <option value="FABRICA BELEM">Fábrica Belém</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="dateRangeStart">Data Inicial:</label>
+                    <input type="date" id="dateRangeStart">
+                </div>
+                <div class="filter-group">
+                    <label for="dateRangeEnd">Data Final:</label>
+                    <input type="date" id="dateRangeEnd">
+                </div>
+                <div class="filter-group">
+                    <label for="shiftFilter">Filtrar por Turno:</label>
+                    <select id="shiftFilter">
+                        <option value="">Todos os turnos</option>
+                        <option value="manha">Manhã</option>
+                        <option value="tarde">Tarde</option>
+                        <option value="noite">Noite</option>
+                        <option value="Intermediario">Intermediário</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="metrics-grid" id="metricsGrid">
+                <!-- Métricas serão preenchidas dinamicamente -->
+                <div class="loading">Carregando dados...</div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3 class="chart-title">Faltas por Dia</h3>
+                    <div class="chart-container">
+                        <canvas id="absencesChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">Horas Perdidas vs Horas Repostas</h3>
+                    <div class="chart-container">
+                        <canvas id="hoursChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">Distribuição de Faltas por Turno</h3>
+                    <div class="chart-container">
+                        <canvas id="shiftChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">Faltas por Unidade</h3>
+                    <div class="chart-container">
+                        <canvas id="unitChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-card" style="margin: 20px;">
+                <h3 class="chart-title">Resumo Detalhado por Dia</h3>
+                <div style="overflow-x: auto;">
+                    <table class="summary-table" id="summaryTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Unidade</th>
+                                <th>Turno</th>
+                                <th>Presentes</th>
+                                <th>Faltas</th>
+                                <th>Faltas Efetivas</th>
+                                <th>Horas Perdidas</th>
+                                <th>Horas Repostas</th>
+                                <th>Resultado Horas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody">
+                            <!-- Dados serão preenchidos dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status Indicator -->
+    <div id="connectionStatus" class="connection-status disconnected">
+        <span class="indicator"></span>
+        <span>Desconectado</span>
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { 
+            getAuth, 
+            signOut,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.appspot.com",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        // DOM elements
+        const appContainer = document.getElementById('appContainer');
+        const unitFilter = document.getElementById('unitFilter');
+        const dateRangeStart = document.getElementById('dateRangeStart');
+        const dateRangeEnd = document.getElementById('dateRangeEnd');
+        const shiftFilter = document.getElementById('shiftFilter');
+        const logoutButton = document.getElementById('logoutButton');
+        const metricsGrid = document.getElementById('metricsGrid');
+        const summaryTableBody = document.getElementById('summaryTableBody');
+        const connectionStatus = document.getElementById('connectionStatus');
+
+        // Charts
+        let absencesChart, hoursChart, shiftChart, unitChart;
+
+        // Update connection status
+        function updateConnectionStatus(status) {
+            connectionStatus.className = `connection-status ${status}`;
+            connectionStatus.querySelector('span:last-child').textContent = 
+                status === 'connected' ? 'Conectado' : 
+                status === 'waiting' ? 'Verificando...' : 'Desconectado';
+        }
+
+        function normalizeShift(shift) {
+        if (!shift) return '';
+        
+        // Converte para minúsculas e remove acentos
+        return shift.toString()
+            .toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .trim();
+        }
+
+        // Format date for display
+        function formatDisplayDate(dateTimeString) {
+            try {
+                const date = new Date(dateTimeString);
+                return date.toLocaleDateString('pt-BR');
+            } catch (e) {
+                console.error('Erro ao formatar data:', e);
+                return dateTimeString || 'Data não informada';
+            }
+        }
+
+        // Format date for comparison (YYYY-MM-DD)
+        function formatDateForComparison(dateTimeString) {
+            try {
+                const date = new Date(dateTimeString);
+                return date.toISOString().split('T')[0];
+            } catch (e) {
+                console.error('Erro ao formatar data para comparação:', e);
+                return '';
+            }
+        }
+
+        // Check if date is within range
+        function isDateInRange(dateString, startDate, endDate) {
+            if (!dateString) return false;
+            
+            const date = new Date(dateString);
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            return date >= start && date <= end;
+        }
+
+        // Calculate effective absentees
+        function calculateEffectiveAbsent(record) {
+            const absent = parseInt(record.absent) || 0;
+            const replacementCount = parseInt(record.replacementCount) || 0;
+            return Math.max(0, absent - replacementCount);
+        }
+
+        // Calculate hours metrics
+        function calculateHoursMetrics(record) {
+            const absent = parseInt(record.absent) || 0;
+            const horasPerdidas = absent * 8;
+            const horasRepostas = record.totalHours || 0;
+            const resultadoHoras = horasPerdidas - horasRepostas;
+            
+            return {
+                horasPerdidas,
+                horasRepostas,
+                resultadoHoras
+            };
+        }
+
+
+        function processRecordsForDashboard(data, filters) {
+    if (!data) return [];
+    
+    const { unit, startDate, endDate, shift } = filters;
+    
+    return Object.entries(data)
+        .filter(([key, value]) => value && typeof value === 'object')
+        .map(([key, record]) => ({ key, ...record }))
+        .filter(record => {
+            // Filter by unit if specified
+            const unitMatch = !unit || 
+                (record.unit && record.unit.toUpperCase() === unit.toUpperCase());
+            
+            // Filter by date range if specified
+            const dateMatch = !startDate || !endDate || 
+                isDateInRange(record.rdDate, startDate, endDate);
+            
+            // Filter by shift if specified - VERSÃO SIMPLIFICADA E FUNCIONAL
+            // Substitua apenas a parte do shiftMatch por:
+let shiftMatch = true;
+if (shift) {
+    const recordShift = String(record.shift || '').toLowerCase().trim();
+    const selectedShift = String(shift).toLowerCase().trim();
+    
+    // Verifica se há qualquer correspondência parcial
+    shiftMatch = recordShift.includes(selectedShift) || 
+                selectedShift.includes(recordShift) ||
+                (selectedShift === 'manha' && recordShift.includes('manh')) ||
+                (selectedShift === 'tarde' && recordShift.includes('tard')) ||
+                (selectedShift === 'noite' && recordShift.includes('noit'));
+}
+            
+            return unitMatch && dateMatch && shiftMatch;
+        })
+        .sort((a, b) => new Date(a.rdDate) - new Date(b.rdDate));
+}
+
+        // Calculate summary metrics
+        function calculateSummaryMetrics(filteredRecords) {
+            let totalFaltas = 0;
+            let totalFaltasEfetivas = 0;
+            let totalHorasPerdidas = 0;
+            let totalHorasRepostas = 0;
+            let totalResultadoHoras = 0;
+            
+            const faltasPorDia = {};
+            const horasPorDia = {};
+            const faltasPorTurno = {};
+            const faltasPorUnidade = {};
+            
+            filteredRecords.forEach(record => {
+                const date = formatDisplayDate(record.rdDate);
+                const effectiveAbsent = calculateEffectiveAbsent(record);
+                const { horasPerdidas, horasRepostas, resultadoHoras } = calculateHoursMetrics(record);
+                
+                // Totais gerais
+                totalFaltas += parseInt(record.absent) || 0;
+                totalFaltasEfetivas += effectiveAbsent;
+                totalHorasPerdidas += horasPerdidas;
+                totalHorasRepostas += horasRepostas;
+                totalResultadoHoras += resultadoHoras;
+                
+                // Faltas por dia
+                if (!faltasPorDia[date]) {
+                    faltasPorDia[date] = 0;
+                }
+                faltasPorDia[date] += parseInt(record.absent) || 0;
+                
+                // Horas por dia
+                if (!horasPorDia[date]) {
+                    horasPorDia[date] = {
+                        perdidas: 0,
+                        repostas: 0
+                    };
+                }
+                horasPorDia[date].perdidas += horasPerdidas;
+                horasPorDia[date].repostas += horasRepostas;
+                
+                // Faltas por turno
+                const turno = record.shift ? capitalizeFirstLetter(record.shift) : 'Não informado';
+                if (!faltasPorTurno[turno]) {
+                    faltasPorTurno[turno] = 0;
+                }
+                faltasPorTurno[turno] += parseInt(record.absent) || 0;
+                
+                // Faltas por unidade
+                const unidade = record.unit || 'Não informado';
+                if (!faltasPorUnidade[unidade]) {
+                    faltasPorUnidade[unidade] = 0;
+                }
+                faltasPorUnidade[unidade] += parseInt(record.absent) || 0;
+            });
+            
+            return {
+                totalFaltas,
+                totalFaltasEfetivas,
+                totalHorasPerdidas,
+                totalHorasRepostas,
+                totalResultadoHoras,
+                faltasPorDia,
+                horasPorDia,
+                faltasPorTurno,
+                faltasPorUnidade
+            };
+        }
+
+        // Capitalize first letter
+        function capitalizeFirstLetter(string) {
+            return string ? string.charAt(0).toUpperCase() + string.slice(1).toLowerCase() : '';
+        }
+
+        // Update metrics cards
+        function updateMetricsCards(metrics) {
+            metricsGrid.innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-title">Total de Faltas</div>
+                    <div class="metric-value">${metrics.totalFaltas}</div>
+                    <div class="metric-detail">Número total de faltas no período</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Faltas Efetivas</div>
+                    <div class="metric-value ${metrics.totalFaltasEfetivas > 0 ? 'metric-negative' : 'metric-positive'}">
+                        ${metrics.totalFaltasEfetivas}
+                    </div>
+                    <div class="metric-detail">Faltas não cobertas por reposição</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Horas Perdidas</div>
+                    <div class="metric-value metric-negative">${metrics.totalHorasPerdidas}h</div>
+                    <div class="metric-detail">Total de horas perdidas por faltas</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Horas Repostas</div>
+                    <div class="metric-value metric-positive">${metrics.totalHorasRepostas}h</div>
+                    <div class="metric-detail">Total de horas repostas pela equipe</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Resultado de Horas</div>
+                    <div class="metric-value ${metrics.totalResultadoHoras > 0 ? 'metric-negative' : 'metric-positive'}">
+                        ${metrics.totalResultadoHoras}h
+                    </div>
+                    <div class="metric-detail">Horas perdidas - horas repostas</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Média Diária de Faltas</div>
+                    <div class="metric-value ${(metrics.totalFaltas / Object.keys(metrics.faltasPorDia).length) > 3 ? 'metric-negative' : 'metric-positive'}">
+                        ${Object.keys(metrics.faltasPorDia).length > 0 ? 
+                            (metrics.totalFaltas / Object.keys(metrics.faltasPorDia).length).toFixed(1) : 0}
+                    </div>
+                    <div class="metric-detail">Média de faltas por dia útil</div>
+                </div>
+            `;
+        }
+
+        // Update charts
+        function updateCharts(metrics) {
+            // Faltas por Dia
+            const dates = Object.keys(metrics.faltasPorDia);
+            const absencesData = dates.map(date => metrics.faltasPorDia[date]);
+            
+            if (absencesChart) absencesChart.destroy();
+            
+            const absencesCtx = document.getElementById('absencesChart').getContext('2d');
+            absencesChart = new Chart(absencesCtx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Faltas',
+                        data: absencesData,
+                        backgroundColor: '#f72585',
+                        borderColor: '#f72585',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Número de Faltas'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Data'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Faltas: ${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Horas Perdidas vs Horas Repostas
+            const horasPerdidasData = dates.map(date => metrics.horasPorDia[date]?.perdidas || 0);
+            const horasRepostasData = dates.map(date => metrics.horasPorDia[date]?.repostas || 0);
+            
+            if (hoursChart) hoursChart.destroy();
+            
+            const hoursCtx = document.getElementById('hoursChart').getContext('2d');
+            hoursChart = new Chart(hoursCtx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Horas Perdidas',
+                            data: horasPerdidasData,
+                            backgroundColor: 'rgba(247, 37, 133, 0.2)',
+                            borderColor: 'rgba(247, 37, 133, 1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        },
+                        {
+                            label: 'Horas Repostas',
+                            data: horasRepostasData,
+                            backgroundColor: 'rgba(76, 201, 240, 0.2)',
+                            borderColor: 'rgba(76, 201, 240, 1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Horas'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Data'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}h`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Faltas por Turno
+            const turnos = Object.keys(metrics.faltasPorTurno);
+            const turnosData = turnos.map(turno => metrics.faltasPorTurno[turno]);
+            
+            if (shiftChart) shiftChart.destroy();
+            
+            const shiftCtx = document.getElementById('shiftChart').getContext('2d');
+            shiftChart = new Chart(shiftCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: turnos,
+                    datasets: [{
+                        data: turnosData,
+                        backgroundColor: [
+                            '#4361ee',
+                            '#3f37c9',
+                            '#7209b7',
+                            '#f72585',
+                            '#4cc9f0',
+                            '#4895ef'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
+                                    const value = context.raw;
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${context.label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Faltas por Unidade
+            const unidades = Object.keys(metrics.faltasPorUnidade);
+            const unidadesData = unidades.map(unidade => metrics.faltasPorUnidade[unidade]);
+            
+            if (unitChart) unitChart.destroy();
+            
+            const unitCtx = document.getElementById('unitChart').getContext('2d');
+            unitChart = new Chart(unitCtx, {
+                type: 'bar',
+                data: {
+                    labels: unidades,
+                    datasets: [{
+                        label: 'Faltas',
+                        data: unidadesData,
+                        backgroundColor: [
+                            '#4361ee',
+                            '#3f37c9',
+                            '#7209b7',
+                            '#f72585',
+                            '#4cc9f0',
+                            '#4895ef'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Número de Faltas'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Unidade'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Faltas: ${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update summary table
+        function updateSummaryTable(filteredRecords) {
+            summaryTableBody.innerHTML = '';
+            
+            if (filteredRecords.length === 0) {
+                summaryTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center;">Nenhum registro encontrado para os filtros selecionados</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            filteredRecords.forEach(record => {
+                const effectiveAbsent = calculateEffectiveAbsent(record);
+                const { horasPerdidas, horasRepostas, resultadoHoras } = calculateHoursMetrics(record);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDisplayDate(record.rdDate)}</td>
+                    <td>${record.unit || 'Não informado'}</td>
+                    <td>${record.shift ? capitalizeFirstLetter(record.shift) : 'Não informado'}</td>
+                    <td>${record.attended || 0}</td>
+                    <td>${record.absent || 0}</td>
+                    <td>${effectiveAbsent}</td>
+                    <td>${horasPerdidas}h</td>
+                    <td>${horasRepostas}h</td>
+                    <td class="${resultadoHoras > 0 ? 'metric-negative' : 'metric-positive'}">${resultadoHoras}h</td>
+                `;
+                summaryTableBody.appendChild(row);
+            });
+        }
+
+        // Load and process data
+        function loadDashboardData() {
+            const unit = unitFilter.value;
+            const startDate = dateRangeStart.value;
+            const endDate = dateRangeEnd.value;
+            const shift = shiftFilter.value;
+            
+            metricsGrid.innerHTML = '<div class="loading">Carregando dados...</div>';
+            
+            const recordsRef = ref(database, 'rdRecords');
+            
+            onValue(recordsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
+                    updateConnectionStatus('disconnected');
+                    return;
+                }
+                
+                const filteredRecords = processRecordsForDashboard(data, {
+                    unit,
+                    startDate,
+                    endDate,
+                    shift
+                });
+                
+                const metrics = calculateSummaryMetrics(filteredRecords);
+                
+                updateMetricsCards(metrics);
+                updateCharts(metrics);
+                updateSummaryTable(filteredRecords);
+                updateConnectionStatus('connected');
+            }, (error) => {
+                console.error('Erro ao carregar dados:', error);
+                metricsGrid.innerHTML = '<div class="no-records" style="color: #ea4335;">Erro ao carregar dados. Verifique sua conexão.</div>';
+                updateConnectionStatus('disconnected');
+            });
+        }
+
+        // Initialize filters with default dates
+        function initFilters() {
+            // Set default date range (current month)
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            dateRangeStart.valueAsDate = firstDay;
+            dateRangeEnd.valueAsDate = lastDay;
+            
+            // Add event listeners to filters
+            [unitFilter, dateRangeStart, dateRangeEnd, shiftFilter].forEach(filter => {
+                filter.addEventListener('change', loadDashboardData);
+            });
+        }
+
+        // Handle logout
+        function handleLogout() {
+            signOut(auth).then(() => {
+                window.location.href = 'index.html'; // Redireciona para a página de login
+            }).catch((error) => {
+                console.error('Erro ao fazer logout:', error);
+            });
+        }
+
+        // Initialize app
+        function initApp() {
+            initFilters();
+            loadDashboardData();
+        }
+
+        // Event listeners
+        logoutButton.addEventListener('click', handleLogout);
+
+        // Check auth state
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.emailVerified) {
+                // User is signed in and email is verified
+                initApp();
+                updateConnectionStatus('connected');
+            } else {
+                // User is not signed in or email is not verified
+                window.location.href = 'index.html'; // Redireciona para a página de login
+            }
+        });
+
+        // Initialize connection status
+        updateConnectionStatus('disconnected');
+    </script>
+</body>
+</html>
