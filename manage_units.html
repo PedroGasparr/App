@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Unidades e Funcionários</title>
+    <link rel="icon" href="img/social-media.gif" type="image/x-icon">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+        }
+
+        h1, h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 30px;
+            font-size: 22px;
+            border-bottom: 2px solid var(--light-gray);
+            padding-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+            background-color: var(--light);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 25px;
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .back-button {
+            background-color: var(--gray);
+            margin-top: 15px;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        .danger-button {
+            background-color: var(--danger);
+            margin-top: 15px;
+        }
+
+        .danger-button:hover {
+            background-color: #e5177a;
+        }
+
+        .success-button {
+            background-color: var(--success);
+            margin-top: 15px;
+        }
+
+        .success-button:hover {
+            background-color: #3aa8d8;
+        }
+
+        /* Tabela de unidades */
+        .units-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .units-table th, .units-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .units-table th {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .units-table tr:hover {
+            background-color: var(--light);
+        }
+
+        .units-table .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .units-table .actions button {
+            margin: 0;
+            padding: 8px 12px;
+            font-size: 14px;
+            width: auto;
+        }
+
+        /* Lista de funcionários */
+        .employees-list {
+            margin-top: 20px;
+            background: var(--light);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--light-gray);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .employee-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px dashed var(--gray);
+        }
+
+        .employee-item:last-child {
+            border-bottom: none;
+        }
+
+        .employee-item button {
+            width: auto;
+            padding: 6px 12px;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        /* Formulário de importação em massa */
+        .mass-import {
+            margin-top: 20px;
+            background: var(--light);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--light-gray);
+        }
+
+        .mass-import textarea {
+            min-height: 150px;
+            font-family: monospace;
+        }
+
+        .mass-import .instructions {
+            font-size: 14px;
+            color: var(--gray);
+            margin-top: 10px;
+        }
+
+        /* Loader Styles */
+        #loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loader div {
+            background: white;
+            padding: 30px 40px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .units-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .units-table .actions {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .units-table .actions button {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div>Carregando...</div>
+    </div>
+
+    <div class="container">
+        <h1>Gerenciar Unidades e Funcionários</h1>
+        
+        <button class="back-button" onclick="window.location.href = 'zhome.html';">Voltar ao Dashboard</button>
+        
+        <h2>Unidades</h2>
+        
+        <div id="unitsSection">
+            <label for="unitName">Nome da Unidade:</label>
+            <input type="text" id="unitName" placeholder="Ex: CD Cariacica">
+            
+            <button id="addUnitBtn" class="success-button">Adicionar Unidade</button>
+            
+            <table class="units-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="unitsList">
+                    <!-- Unidades serão carregadas aqui -->
+                </tbody>
+            </table>
+        </div>
+        
+        <h2>Funcionários</h2>
+        
+        <div id="employeesSection">
+            <label for="selectedUnit">Selecione a Unidade:</label>
+            <select id="selectedUnit">
+                <option value="">Selecione uma unidade</option>
+                <!-- Unidades serão carregadas aqui -->
+            </select>
+            
+            <div id="unitEmployeesContainer" style="display: none;">
+                <label for="employeeName">Nome do Funcionário:</label>
+                <input type="text" id="employeeName" placeholder="Ex: João da Silva">
+                
+                <button id="addEmployeeBtn" class="success-button">Adicionar Funcionário</button>
+                
+                <div class="employees-list" id="employeesList">
+                    <!-- Funcionários serão listados aqui -->
+                </div>
+                
+                <div class="mass-import">
+                    <h3>Importação em Massa</h3>
+                    <label for="massEmployees">Lista de Funcionários (um por linha):</label>
+                    <textarea id="massEmployees" placeholder="João da Silva&#10;Maria Oliveira&#10;Carlos Souza"></textarea>
+                    <p class="instructions">Digite ou cole os nomes dos funcionários, um por linha.</p>
+                    <button id="importEmployeesBtn" class="success-button">Importar Funcionários</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { 
+            getDatabase, 
+            ref, 
+            push, 
+            set,
+            get,
+            child,
+            remove,
+            update
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        
+        // Variáveis globais
+        let currentUser = null;
+        let units = []; // Armazenará as unidades do banco de dados
+        let employees = {}; // Armazenará os funcionários por unidade
+
+        // Mostra o loader
+        function showLoader() {
+            document.getElementById('loader').style.display = 'flex';
+        }
+
+        // Esconde o loader
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        // Carrega as unidades do banco de dados
+        async function loadUnits() {
+            try {
+                showLoader();
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, 'units'));
+                
+                if (snapshot.exists()) {
+                    units = [];
+                    const unitsData = snapshot.val();
+                    
+                    for (const unitId in unitsData) {
+                        units.push({
+                            id: unitId,
+                            name: unitsData[unitId].name
+                        });
+                    }
+                    
+                    // Ordena as unidades por nome
+                    units.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    // Atualiza a lista de unidades
+                    updateUnitsList();
+                    
+                    // Atualiza o dropdown de seleção de unidade para funcionários
+                    updateUnitSelectionDropdown();
+                } else {
+                    console.log("Nenhuma unidade encontrada no banco de dados");
+                    document.getElementById('unitsList').innerHTML = '<tr><td colspan="2">Nenhuma unidade cadastrada</td></tr>';
+                }
+                
+                hideLoader();
+            } catch (error) {
+                hideLoader();
+                console.error("Erro ao carregar unidades:", error);
+                alert("Erro ao carregar unidades. Por favor, recarregue a página.");
+            }
+        }
+
+        // Atualiza a lista de unidades na tabela
+        function updateUnitsList() {
+            const unitsList = document.getElementById('unitsList');
+            unitsList.innerHTML = '';
+            
+            if (units.length === 0) {
+                unitsList.innerHTML = '<tr><td colspan="2">Nenhuma unidade cadastrada</td></tr>';
+                return;
+            }
+            
+            units.forEach(unit => {
+                const row = document.createElement('tr');
+                
+                const nameCell = document.createElement('td');
+                nameCell.textContent = unit.name;
+                
+                const actionsCell = document.createElement('td');
+                actionsCell.className = 'actions';
+                
+                const editBtn = document.createElement('button');
+                editBtn.className = 'success-button';
+                editBtn.textContent = 'Editar';
+                editBtn.onclick = () => editUnit(unit.id);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'danger-button';
+                deleteBtn.textContent = 'Excluir';
+                deleteBtn.onclick = () => deleteUnit(unit.id);
+                
+                actionsCell.appendChild(editBtn);
+                actionsCell.appendChild(deleteBtn);
+                
+                row.appendChild(nameCell);
+                row.appendChild(actionsCell);
+                
+                unitsList.appendChild(row);
+            });
+        }
+
+        // Atualiza o dropdown de seleção de unidade para funcionários
+        function updateUnitSelectionDropdown() {
+            const unitSelect = document.getElementById('selectedUnit');
+            unitSelect.innerHTML = '<option value="">Selecione uma unidade</option>';
+            
+            units.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.id;
+                option.textContent = unit.name;
+                unitSelect.appendChild(option);
+            });
+        }
+
+        // Adiciona uma nova unidade
+        async function addUnit() {
+            const unitName = document.getElementById('unitName').value.trim();
+            
+            if (!unitName) {
+                alert("Por favor, informe o nome da unidade.");
+                return;
+            }
+            
+            try {
+                showLoader();
+                
+                // Verifica se a unidade já existe
+                const unitExists = units.some(unit => unit.name.toLowerCase() === unitName.toLowerCase());
+                if (unitExists) {
+                    hideLoader();
+                    alert("Já existe uma unidade com este nome.");
+                    return;
+                }
+                
+                // Adiciona ao banco de dados
+                const unitsRef = ref(database, 'units');
+                const newUnitRef = push(unitsRef);
+                
+                await set(newUnitRef, {
+                    name: unitName
+                });
+                
+                // Recarrega a lista de unidades
+                await loadUnits();
+                
+                // Limpa o campo
+                document.getElementById('unitName').value = '';
+                
+                hideLoader();
+                alert("Unidade adicionada com sucesso!");
+            } catch (error) {
+                hideLoader();
+                console.error("Erro ao adicionar unidade:", error);
+                alert("Erro ao adicionar unidade. Por favor, tente novamente.");
+            }
+        }
+
+        // Edita uma unidade existente
+        async function editUnit(unitId) {
+            const unit = units.find(u => u.id === unitId);
+            if (!unit) return;
+            
+            const newName = prompt("Editar nome da unidade:", unit.name);
+            if (newName === null || newName.trim() === '') return;
+            
+            try {
+                showLoader();
+                
+                // Verifica se o novo nome já existe
+                const nameExists = units.some(u => 
+                    u.id !== unitId && u.name.toLowerCase() === newName.toLowerCase()
+                );
+                
+                if (nameExists) {
+                    hideLoader();
+                    alert("Já existe uma unidade com este nome.");
+                    return;
+                }
+                
+                // Atualiza no banco de dados
+                const unitRef = ref(database, `units/${unitId}`);
+                await update(unitRef, {
+                    name: newName
+                });
+                
+                // Recarrega a lista de unidades
+                await loadUnits();
+                
+                hideLoader();
+                alert("Unidade atualizada com sucesso!");
+            } catch (error) {
+                hideLoader();
+                console.error("Erro ao editar unidade:", error);
+                alert("Erro ao editar unidade. Por favor, tente novamente.");
+            }
+        }
+
+        // Exclui uma unidade
+        async function deleteUnit(unitId) {
+            const unit = units.find(u => u.id === unitId);
+            if (!unit) return;
+            
+            const confirmDelete = confirm(`Tem certeza que deseja excluir a unidade "${unit.name}"? Esta ação não pode ser desfeita e também removerá todos os funcionários associados.`);
+            if (!confirmDelete) return;
+            
+            try {
+                showLoader();
+                
+                // Remove a unidade e seus funcionários
+                const unitRef = ref(database, `units/${unitId}`);
+                await remove(unitRef);
+                
+                // Recarrega a lista de unidades
+                await loadUnits();
+                
+                // Se a unidade excluída estava selecionada, limpa a seção de funcionários
+                if (document.getElementById('selectedUnit').value === unitId) {
+                    document.getElementById('selectedUnit').value = '';
+                    document.getElementById('unitEmployeesContainer').style.display = 'none';
+                }
+                
+                hideLoader();
+                alert("Unidade excluída com sucesso!");
+            } catch (error) {
+                hideLoader();
+                console.error("Erro ao excluir unidade:", error);
+                alert("Erro ao excluir unidade. Por favor, tente novamente.");
+            }
+        }
+
+        // Carrega os funcionários de uma unidade
+        async function loadEmployees(unitId) {
+            try {
+                showLoader();
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, `units/${unitId}/employees`));
+                
+                if (snapshot.exists()) {
+                    employees[unitId] = [];
+                    const employeesData = snapshot.val();
+                    
+                    for (const employeeId in employeesData) {
+                        employees[unitId].push({
+                            id: employeeId,
+                            name: employeesData[employeeId].name
+                        });
+                    }
+                    
+                    // Ordena os funcionários por nome
+                    employees[unitId].sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    // Atualiza a lista de funcionários
+                    updateEmployeesList(unitId);
+                } else {
+                    console.log(`Nenhum funcionário encontrado para a unidade ${unitId}`);
+                    employees[unitId] = [];
+                    document.getElementById('employeesList').innerHTML = '<p>Nenhum funcionário cadastrado nesta unidade.</p>';
+                }
+                
+                hideLoader();
+            } catch (error) {
+                hideLoader();
+                console.error(`Erro ao carregar funcionários da unidade ${unitId}:`, error);
+                alert("Erro ao carregar funcionários. Por favor, tente novamente.");
+            }
+        }
+
+        // Atualiza a lista de funcionários
+        function updateEmployeesList(unitId) {
+            const employeesList = document.getElementById('employeesList');
+            employeesList.innerHTML = '';
+            
+            if (!employees[unitId] || employees[unitId].length === 0) {
+                employeesList.innerHTML = '<p>Nenhum funcionário cadastrado nesta unidade.</p>';
+                return;
+            }
+            
+            employees[unitId].forEach(employee => {
+                const employeeDiv = document.createElement('div');
+                employeeDiv.className = 'employee-item';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = employee.name;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'danger-button';
+                deleteBtn.textContent = 'Remover';
+                deleteBtn.onclick = () => deleteEmployee(unitId, employee.id);
+                
+                employeeDiv.appendChild(nameSpan);
+                employeeDiv.appendChild(deleteBtn);
+                
+                employeesList.appendChild(employeeDiv);
+            });
+        }
+
+        // Adiciona um novo funcionário
+        async function addEmployee() {
+            const unitId = document.getElementById('selectedUnit').value;
+            const employeeName = document.getElementById('employeeName').value.trim();
+            
+            if (!unitId) {
+                alert("Por favor, selecione uma unidade.");
+                return;
+            }
+            
+            if (!employeeName) {
+                alert("Por favor, informe o nome do funcionário.");
+                return;
+            }
+            
+            try {
+                showLoader();
+                
+                // Verifica se o funcionário já existe
+                const employeeExists = employees[unitId]?.some(
+                    emp => emp.name.toLowerCase() === employeeName.toLowerCase()
+                );
+                
+                if (employeeExists) {
+                    hideLoader();
+                    alert("Já existe um funcionário com este nome nesta unidade.");
+                    return;
+                }
+                
+                // Adiciona ao banco de dados
+                const employeesRef = ref(database, `units/${unitId}/employees`);
+                const newEmployeeRef = push(employeesRef);
+                
+                await set(newEmployeeRef, {
+                    name: employeeName
+                });
+                
+                // Recarrega a lista de funcionários
+                await loadEmployees(unitId);
+                
+                // Limpa o campo
+                document.getElementById('employeeName').value = '';
+                
+                hideLoader();
+                alert("Funcionário adicionado com sucesso!");
+            } catch (error) {
+                hideLoader();
+                console.error("Erro ao adicionar funcionário:", error);
+                alert("Erro ao adicionar funcionário. Por favor, tente novamente.");
+            }
+        }
+
+        // Importa vários funcionários de uma vez
+        async function importEmployees() {
+            const unitId = document.getElementById('selectedUnit').value;
+            const massEmployeesText = document.getElementById('massEmployees').value.trim();
+            
+            if (!unitId) {
+                alert("Por favor, selecione uma unidade.");
+                return;
+            }
+            
+            if (!massEmployeesText) {
+                alert("Por favor, informe a lista de funcionários.");
+                return;
+            }
+            
+            try {
+                showLoader();
+                
+                // Divide os nomes por linha e filtra linhas vazias
+                const employeeNames = massEmployeesText.split('\n')
+                    .map(name => name.trim())
+                    .filter(name => name !== '');
+                
+                if (employeeNames.length === 0) {
+                    hideLoader();
+                    alert("Nenhum nome válido encontrado para importação.");
+                    return;
+                }
+                
+                // Verifica se algum funcionário já existe
+                const existingEmployees = employees[unitId] || [];
+                const duplicates = employeeNames.filter(name => 
+                    existingEmployees.some(emp => emp.name.toLowerCase() === name.toLowerCase())
+                );
+                
+                if (duplicates.length > 0) {
+                    const continueImport = confirm(`Os seguintes funcionários já existem nesta unidade:\n\n${duplicates.join('\n')}\n\nDeseja continuar com a importação ignorando os duplicados?`);
+                    if (!continueImport) {
+                        hideLoader();
+                        return;
+                    }
+                }
+                
+                // Filtra apenas os novos funcionários
+                const newEmployeeNames = employeeNames.filter(name => 
+                    !existingEmployees.some(emp => emp.name.toLowerCase() === name.toLowerCase())
+                );
+                
+                if (newEmployeeNames.length === 0) {
+                    hideLoader();
+                    alert("Todos os funcionários informados já existem nesta unidade.");
+                    return;
+                }
+                
+                // Adiciona os novos funcionários ao banco de dados
+                const employeesRef = ref(database, `units/${unitId}/employees`);
+                
+                for (const name of newEmployeeNames) {
+                    const newEmployeeRef = push(employeesRef);
+                    await set(newEmployeeRef, { name });
+                }
+                
+                // Recarrega a lista de funcionários
+                await loadEmployees(unitId);
+                
+                // Limpa o campo
+                document.getElementById('massEmployees').value = '';
+                
+                hideLoader();
+                alert(`${newEmployeeNames.length} funcionário(s) importado(s) com sucesso!`);
+            } catch (error) {
+                hideLoader();
+                console.error("Erro ao importar funcionários:", error);
+                alert("Erro ao importar funcionários. Por favor, tente novamente.");
+            }
+        }
+
+        // Remove um funcionário
+        async function deleteEmployee(unitId, employeeId) {
+            const employee = employees[unitId]?.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            const confirmDelete = confirm(`Tem certeza que deseja remover o funcionário "${employee.name}"?`);
+            if (!confirmDelete) return;
+            
+            try {
+                showLoader();
+                
+                // Remove do banco de dados
+                const employeeRef = ref(database, `units/${unitId}/employees/${employeeId}`);
+                await remove(employeeRef);
+                
+                // Recarrega a lista de funcionários
+                await loadEmployees(unitId);
+                
+                hideLoader();
+                alert("Funcionário removido com sucesso!");
+            } catch (error) {
+                hideLoader();
+                console.error("Erro ao remover funcionário:", error);
+                alert("Erro ao remover funcionário. Por favor, tente novamente.");
+            }
+        }
+
+        // Inicialização quando o DOM estiver carregado
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Configura os event listeners
+            document.getElementById('addUnitBtn').addEventListener('click', addUnit);
+            document.getElementById('addEmployeeBtn').addEventListener('click', addEmployee);
+            document.getElementById('importEmployeesBtn').addEventListener('click', importEmployees);
+            
+            document.getElementById('selectedUnit').addEventListener('change', function() {
+                const unitId = this.value;
+                const container = document.getElementById('unitEmployeesContainer');
+                
+                if (unitId) {
+                    container.style.display = 'block';
+                    loadEmployees(unitId);
+                } else {
+                    container.style.display = 'none';
+                }
+            });
+            
+            // Carrega as unidades do banco de dados
+            await loadUnits();
+        });
+
+        // Monitora o estado de autenticação
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("Usuário logado:", user);
+                
+                // Verifica se o email foi verificado
+                if (!user.emailVerified) {
+                    const resend = confirm("Seu e-mail não foi verificado. Deseja reenviar o e-mail de verificação?");
+                    if (resend) {
+                        sendEmailVerification(user).then(() => {
+                            alert("E-mail de verificação reenviado. Por favor, verifique sua caixa de entrada.");
+                            window.location.href = 'index.html';
+                        }).catch(error => {
+                            console.error("Erro ao reenviar e-mail:", error);
+                            alert("Erro ao reenviar e-mail de verificação.");
+                        });
+                    }
+                }
+            } else {
+                console.log("Nenhum usuário logado");
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>

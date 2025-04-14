@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="wstyle.css">
  
     <!-- Firebase SDK (modular version) -->
+    <script src="js.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { 
@@ -18,19 +19,7 @@
             getRedirectResult,
             sendEmailVerification
         } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
-        
-        // Sua configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
-            authDomain: "application-gzl.firebaseapp.com",
-            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
-            projectId: "application-gzl",
-            storageBucket: "application-gzl.firebasestorage.app",
-            messagingSenderId: "319900903265",
-            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
-            measurementId: "G-ZRRFQZXT54"
-        };
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -41,6 +30,53 @@
         // Adiciona escopos necessários
         provider.addScope('profile');
         provider.addScope('email');
+
+        // Função para carregar unidades do banco de dados
+        const loadUnits = async () => {
+            try {
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, 'units'));
+                
+                if (snapshot.exists()) {
+                    const units = [];
+                    const unitsData = snapshot.val();
+                    
+                    for (const unitId in unitsData) {
+                        units.push({
+                            id: unitId,
+                            name: unitsData[unitId].name
+                        });
+                    }
+                    
+                    // Ordena as unidades por nome
+                    units.sort((a, b) => a.name.localeCompare(b.name));
+                    return units;
+                }
+                return [];
+            } catch (error) {
+                console.error("Erro ao carregar unidades:", error);
+                return [];
+            }
+        };
+
+        // Função para atualizar o dropdown de unidades
+        const updateUnitDropdown = async () => {
+            const units = await loadUnits();
+            const unitSelect = document.getElementById('signUpUnit');
+            
+            // Limpa opções existentes, mantendo a primeira opção padrão
+            while (unitSelect.options.length > 1) {
+                unitSelect.remove(1);
+            }
+            
+            // Adiciona as unidades do banco de dados
+            units.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.id;
+                option.textContent = unit.name;
+                unitSelect.appendChild(option);
+            });
+        };
 
         // Função para salvar dados do usuário no Realtime Database
         const saveUserData = (userId, name, email, birthdate, unit) => {
@@ -123,8 +159,15 @@
             saveUserData,
             sendEmailVerification,
             showError,
-            hideError
+            hideError,
+            loadUnits,
+            updateUnitDropdown
         };
+
+        // Carrega as unidades quando o script é executado
+        document.addEventListener('DOMContentLoaded', () => {
+            window.firebase.updateUnitDropdown();
+        });
     </script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
@@ -163,9 +206,7 @@
                 <div id="signUpBirthdateError" class="error-message"></div>
                 <select id="signUpUnit" required>
                     <option value="" disabled selected>Selecione sua unidade</option>
-                    <option value="Fabrica Belem">Fabrica Belem</option>
-                    <option value="Fabrica Limeira">Fabrica Limeira</option>
-                    <option value="CD Cariacica">CD Cariacica</option>
+                    <!-- As unidades serão carregadas dinamicamente aqui -->
                 </select>
                 <div id="signUpUnitError" class="error-message"></div>
                 <button type="submit">Cadastrar</button>
@@ -203,6 +244,8 @@
             // Alternar entre login e cadastro
             signUpButton.addEventListener('click', () => {
                 container.classList.add("right-panel-active");
+                // Atualiza as unidades quando o formulário de cadastro é exibido
+                window.firebase.updateUnitDropdown();
             });
             
             signInButton.addEventListener('click', () => {
@@ -276,7 +319,18 @@
                 const email = document.getElementById('signUpEmail').value;
                 const password = document.getElementById('signUpPassword').value;
                 const birthdate = document.getElementById('signUpBirthdate').value;
-                const unit = document.getElementById('signUpUnit').value;
+                const unitSelect = document.getElementById('signUpUnit');
+                const unit = {
+                    id: unitSelect.value,
+                    name: unitSelect.options[unitSelect.selectedIndex].text
+                };
+                
+                // Validação da unidade
+                if (!unit.id) {
+                    document.getElementById('loader').style.display = 'none';
+                    window.firebase.showError('signUpUnitError', 'Por favor, selecione uma unidade');
+                    return;
+                }
                 
                 // Limpa erros anteriores
                 window.firebase.hideError('signUpNameError');

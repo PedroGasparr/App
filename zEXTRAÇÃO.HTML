@@ -181,6 +181,77 @@
       .download-btn:hover {
         background-color: rgba(255, 255, 255, 0.3);
       }
+
+      /* Modal de senha */
+      .password-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .password-modal-content {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        text-align: center;
+      }
+
+      .password-modal h3 {
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .password-modal input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+
+      .password-modal-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .password-modal button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+      }
+
+      .password-modal-confirm {
+        background-color: #4361ee;
+        color: white;
+      }
+
+      .password-modal-confirm:hover {
+        background-color: #3a56d4;
+      }
+
+      .password-modal-cancel {
+        background-color: #f72585;
+        color: white;
+      }
+
+      .password-modal-cancel:hover {
+        background-color: #d51a6a;
+      }
       
       /* Responsividade */
       @media (max-width: 768px) {
@@ -284,21 +355,24 @@
       </div>
     </div>
 
+    <!-- Modal de senha -->
+    <div class="password-modal" id="passwordModal">
+      <div class="password-modal-content">
+        <h3>Digite a senha de acesso</h3>
+        <input type="password" id="passwordInput" placeholder="Senha" autocomplete="off">
+        <div id="passwordError" style="color: red; margin-bottom: 15px; display: none;"></div>
+        <div class="password-modal-buttons">
+          <button class="password-modal-cancel" id="cancelBtn">Cancelar</button>
+          <button class="password-modal-confirm" id="confirmBtn">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js.js"></script>
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
       import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
       import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
-        authDomain: "application-gzl.firebaseapp.com",
-        databaseURL: "https://application-gzl-default-rtdb.firebaseio.com/",
-        projectId: "application-gzl",
-        storageBucket: "application-gzl.firebasestorage.app",
-        messagingSenderId: "319900903265",
-        appId: "1:319900903265:web:a8f400aeb7a697fc168720",
-        measurementId: "G-ZRRFQZXT54"
-      };
 
       const app = initializeApp(firebaseConfig);
       const database = getDatabase(app);
@@ -306,6 +380,10 @@
 
       // Variável para armazenar o avatar aleatório gerado
       let randomAvatarUrl = '';
+      // Variável para armazenar o destino após a senha ser validada
+      let targetUrl = '';
+      // Senha de acesso
+      const ACCESS_PASSWORD = "123Qwetr@#$%";
 
       // Função para gerar um número aleatório entre 1 e 99
       const getRandomAvatarId = () => Math.floor(Math.random() * 99) + 1;
@@ -318,6 +396,31 @@
         document.getElementById('user-photo').style.display = 'block';
         document.getElementById('user-photo-placeholder').style.display = 'none';
       };
+
+      // Função para mostrar o modal de senha
+      function showPasswordModal(url) {
+        targetUrl = url;
+        document.getElementById('passwordModal').style.display = 'flex';
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordError').style.display = 'none';
+        document.getElementById('passwordInput').focus();
+      }
+
+      // Função para verificar a senha
+      function checkPassword() {
+        const password = document.getElementById('passwordInput').value;
+        const errorElement = document.getElementById('passwordError');
+        
+        if (password === ACCESS_PASSWORD) {
+          // Senha correta, redireciona para o destino
+          document.getElementById('passwordModal').style.display = 'none';
+          window.location.href = targetUrl;
+        } else {
+          // Senha incorreta, mostra erro
+          errorElement.textContent = 'Senha incorreta!';
+          errorElement.style.display = 'block';
+        }
+      }
 
       // Função para converter dados em XLSX e baixar
       function downloadXLSX(data) {
@@ -359,24 +462,25 @@
         document.getElementById('rdBanner').addEventListener('click', (e) => {
           // Evitar que o clique no botão de download redirecione
           if (!e.target.closest('.download-btn')) {
-            window.location.href = 'zvisualizacao_checklist_rd.html';
+            showPasswordModal('zvisualizacao_checklist_rd.html');
           }
         });
+        
         document.getElementById('rd-banner-1').addEventListener('click', (e) => {
           // Evitar que o clique no botão de download redirecione
           if (!e.target.closest('.download-btn')) {
-            window.location.href = 'Construction.html';
+            showPasswordModal('zdashboardrdo.html');
           }
         });
         
         // Adiciona evento de clique ao banner Eliminar
         document.getElementById('eliminarBanner').addEventListener('click', () => {
-          window.location.href = 'Construction.html';
+          showPasswordModal('zdashboardocorrencia.html');
         });
         
         // Adiciona evento de clique ao novo banner de Avarias
         document.getElementById('avariasBanner').addEventListener('click', () => {
-          window.location.href = 'Construction.html'; // Substitua pelo nome do seu arquivo da dashboard
+          showPasswordModal('zdashboardavaria.html');
         });
         
         // Adiciona evento de clique ao botão de download
@@ -414,6 +518,20 @@
               document.getElementById('downloadBtn').innerHTML = originalIcon;
             }
           });
+        });
+
+        // Eventos do modal de senha
+        document.getElementById('confirmBtn').addEventListener('click', checkPassword);
+        
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+          document.getElementById('passwordModal').style.display = 'none';
+        });
+        
+        // Permitir pressionar Enter para confirmar
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            checkPassword();
+          }
         });
       });
 

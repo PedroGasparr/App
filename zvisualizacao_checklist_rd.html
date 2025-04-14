@@ -497,10 +497,18 @@
             <div class="filter-group">
                 <label for="unitFilter">Filtrar por Unidade:</label>
                 <select id="unitFilter">
-                    <option value="">Todas as unidades</option>
-                    <option value="FABRICA LIMEIRA">Fábrica Limeira</option>
-                    <option value="CD CARIACICA">CD Cariacica</option>
-                    <option value="FABRICA BELEM">Fábrica Belém</option>
+                    <option value="">Todas Unidades</option>
+                    <!-- Unidades serão carregadas dinamicamente -->
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="companyFilter">Filtrar por Empresa:</label>
+                <select id="companyFilter">
+                    <option value="">Todas as empresas</option>
+                <option value="Suzano">Suzano</option>
+                <option value="Guizilim">Guizilim</option>
+                <option value="JOHN DEERE">Jonh Deere</option>
+                <option value="OJI PAPÉIS">Oji Papéis</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -542,30 +550,39 @@
         <span>Desconectado</span>
     </div>
 
+    <!-- Adicione este script antes do seu módulo JavaScript -->
+    <script>
+        // Configuração do Firebase - SUBSTITUA COM SUAS PRÓPRIAS CREDENCIAIS
+        const firebaseConfig = {
+  apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+  authDomain: "application-gzl.firebaseapp.com",
+  databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
+  projectId: "application-gzl",
+  storageBucket: "application-gzl.firebasestorage.app",
+  messagingSenderId: "319900903265",
+  appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+  measurementId: "G-ZRRFQZXT54"
+};
+    </script>
+
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { 
+            getDatabase, 
+            ref, 
+            onValue, 
+            remove,
+            get,
+            child 
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { 
             getAuth, 
             signInWithEmailAndPassword, 
             signOut,
             onAuthStateChanged,
-            sendEmailVerification,
-            sendPasswordResetEmail
+            sendEmailVerification
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
-            authDomain: "application-gzl.firebaseapp.com",
-            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
-            projectId: "application-gzl",
-            storageBucket: "application-gzl.appspot.com",
-            messagingSenderId: "319900903265",
-            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
-            measurementId: "G-ZRRFQZXT54"
-        };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -578,6 +595,7 @@
         const appContainer = document.getElementById('appContainer');
         const recordsContainer = document.getElementById('recordsContainer');
         const unitFilter = document.getElementById('unitFilter');
+        const companyFilter = document.getElementById('companyFilter');
         const dateFilter = document.getElementById('dateFilter');
         const shiftFilter = document.getElementById('shiftFilter');
         const loginEmail = document.getElementById('loginEmail');
@@ -589,7 +607,11 @@
         const resendButton = document.getElementById('resendButton');
         const connectionStatus = document.getElementById('connectionStatus');
 
-        // Update connection status
+        // Variáveis globais
+        let units = []; // Armazenará as unidades do banco de dados
+        let currentUser = null;
+
+        // Atualiza o status da conexão
         function updateConnectionStatus(status) {
             connectionStatus.className = `connection-status ${status}`;
             connectionStatus.querySelector('span:last-child').textContent = 
@@ -597,7 +619,49 @@
                 status === 'waiting' ? 'Verificando...' : 'Desconectado';
         }
 
-        // Format date for display
+        // Carrega as unidades do banco de dados
+        async function loadUnits() {
+            try {
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, 'units'));
+                
+                if (snapshot.exists()) {
+                    units = [];
+                    const unitsData = snapshot.val();
+                    
+                    for (const unitId in unitsData) {
+                        units.push({
+                            id: unitId,
+                            name: unitsData[unitId].name
+                        });
+                    }
+                    
+                    // Ordena as unidades por nome
+                    units.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    // Atualiza o dropdown de unidades
+                    updateUnitFilter();
+                } else {
+                    console.log("Nenhuma unidade encontrada no banco de dados");
+                }
+            } catch (error) {
+                console.error("Erro ao carregar unidades:", error);
+            }
+        }
+
+        // Atualiza o filtro de unidades com os dados do banco
+        function updateUnitFilter() {
+            unitFilter.innerHTML = '<option value="">Todas Unidades</option>';
+            
+            units.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.id;
+                option.textContent = unit.name;
+                unitFilter.appendChild(option);
+            });
+        }
+
+        // Formata a data para exibição
         function formatDisplayDate(dateTimeString) {
             try {
                 const date = new Date(dateTimeString);
@@ -613,8 +677,8 @@
                 return dateTimeString || 'Data não informada';
             }
         }
-    
-        // Format date for comparison (YYYY-MM-DD)
+
+        // Formata a data para comparação (YYYY-MM-DD)
         function formatDateForComparison(dateTimeString) {
             try {
                 const date = new Date(dateTimeString);
@@ -624,27 +688,27 @@
                 return '';
             }
         }
-    
-        // Capitalize first letter
+
+        // Capitaliza a primeira letra
         function capitalizeFirstLetter(string) {
             return string ? string.charAt(0).toUpperCase() + string.slice(1).toLowerCase() : '';
         }
-    
-        // Calculate effective absentees
+
+        // Calcula faltantes efetivos
         function calculateEffectiveAbsent(record) {
             const absent = parseInt(record.absent) || 0;
             const replacementCount = parseInt(record.replacementCount) || 0;
             return Math.max(0, absent - replacementCount);
         }
-    
-        // Calculate total team (Presentes + Faltantes)
+
+        // Calcula o total do time (Presentes + Reposição)
         function calculateTotalTeam(record) {
             const attended = parseInt(record.attended) || 0;
             const replacementCount = parseInt(record.replacementCount) || 0;
             return attended + replacementCount;
         }
-    
-        // Format hours information
+
+        // Formata as informações de horas
         function formatHoursInfo(record) {
             if (!record.replacementCount || !record.replacementHours) return '';
             
@@ -687,12 +751,12 @@
             `;
         }
 
-        // Format absent employees list with type (falta/atestado)
+        // Formata a lista de funcionários ausentes com tipo (falta/atestado)
         function formatAbsentEmployees(comments) {
             if (!comments) return '';
             
             try {
-                // Check if it's a list with absence types (from CD Cariacica)
+                // Verifica se é uma lista com tipos de ausência (do CD Cariacica)
                 if (comments.includes('(falta)') || comments.includes('(atestado)')) {
                     const employees = comments.split(', ')
                         .map(e => e.trim())
@@ -720,7 +784,7 @@
                     `;
                 }
                 
-                // For other units or old format
+                // Para outras unidades ou formato antigo
                 return `
                     <div class="absent-list">
                         <div class="absent-list-title">Observações:</div>
@@ -732,33 +796,42 @@
                 return comments;
             }
         }
-    
-        // Filter and sort records
-        function processRecords(data, unitFilter, dateFilter, shiftFilter) {
+
+        // Filtra e ordena os registros
+        function processRecords(data, unitFilter, companyFilter, dateFilter, shiftFilter) {
             if (!data) return [];
             
             return Object.entries(data)
                 .filter(([key, value]) => value && typeof value === 'object')
-                .map(([key, record]) => ({ key, ...record }))
+                .map(([key, record]) => ({ 
+                    key, 
+                    ...record,
+                    // Adiciona o nome da unidade buscando no array de unidades
+                    unitName: units.find(u => u.id === record.unitId)?.name || record.unit || 'Unidade não encontrada'
+                }))
                 .filter(record => {
-                    // Filter by unit if specified
+                    // Filtra por unidade se especificado
                     const unitMatch = !unitFilter || 
-                        (record.unit && record.unit.toUpperCase() === unitFilter.toUpperCase());
+                        (record.unitId === unitFilter);
                     
-                    // Filter by date if specified
+                    // Filtra por empresa se especificado
+                    const companyMatch = !companyFilter || 
+                        (record.empresa && record.empresa.toUpperCase() === companyFilter.toUpperCase());
+                    
+                    // Filtra por data se especificado
                     const dateMatch = !dateFilter || 
                         formatDateForComparison(record.rdDate) === dateFilter;
                     
-                    // Filter by shift if specified
+                    // Filtra por turno se especificado
                     const shiftMatch = !shiftFilter || 
                         (record.shift && record.shift.toLowerCase() === shiftFilter.toLowerCase());
                     
-                    return unitMatch && dateMatch && shiftMatch;
+                    return unitMatch && companyMatch && dateMatch && shiftMatch;
                 })
-                .sort((a, b) => new Date(b.rdDate) - new Date(a.rdDate)); // Newest first
+                .sort((a, b) => new Date(b.rdDate) - new Date(a.rdDate)); // Mais recentes primeiro
         }
-    
-        // Display records
+
+        // Exibe os registros
         function displayRecords(filteredRecords) {
             recordsContainer.innerHTML = '';
     
@@ -767,7 +840,7 @@
                 return;
             }
 
-            // Create grid container
+            // Cria container grid
             const recordsGrid = document.createElement('div');
             recordsGrid.className = 'records-grid';
             recordsContainer.appendChild(recordsGrid);
@@ -781,14 +854,14 @@
                 recordCard.innerHTML = `
                     <div class="card-header">
                         <div class="card-header-content">
-                            ${formatDisplayDate(record.rdDate)} - ${record.unit || 'Sem unidade'}
+                            ${formatDisplayDate(record.rdDate)} - ${record.unitName}
                         </div>
                         <button class="delete-btn" data-record-id="${record.key}">🗑️</button>
                     </div>
                     <div class="card-body">
                         <div class="info-row">
                             <span class="info-label">Unidade:</span>
-                            <span class="info-value">${record.unit || 'Não informado'}</span>
+                            <span class="info-value">${record.unitName}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Turno:</span>
@@ -797,6 +870,10 @@
                         <div class="info-row">
                             <span class="info-label">Responsável:</span>
                             <span class="info-value">${record.responsible || 'Não informado'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Empresa:</span>
+                            <span class="info-value">${record.empresa || 'Não informado'}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Presentes:</span>
@@ -839,7 +916,7 @@
                 recordsGrid.appendChild(recordCard);
             });
 
-            // Add delete button event listeners
+            // Adiciona listeners para os botões de deletar
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -849,7 +926,7 @@
             });
         }
 
-        // Show password modal for delete confirmation
+        // Mostra modal de senha para confirmação de exclusão
         function showPasswordModal(recordId) {
             const modal = document.getElementById('passwordModal');
             const adminPasswordInput = document.getElementById('adminPassword');
@@ -867,7 +944,7 @@
 
             confirmBtn.onclick = () => {
                 const enteredPassword = adminPasswordInput.value;
-                const adminPassword = "123Qwetr@#$%"; // Admin password
+                const adminPassword = "123Qwetr@#$%"; // Senha de administrador
 
                 if (enteredPassword === adminPassword) {
                     deleteRecord(recordId);
@@ -878,7 +955,7 @@
             };
         }
 
-        // Delete record from database
+        // Deleta registro do banco de dados
         function deleteRecord(recordId) {
             const recordRef = ref(database, `rdRecords/${recordId}`);
             
@@ -892,8 +969,8 @@
                     alert('Ocorreu um erro ao deletar o registro');
                 });
         }
-    
-        // Fetch and load records
+
+        // Carrega e exibe os registros
         function loadRecords() {
             recordsContainer.innerHTML = '<div class="loading">Carregando registros...</div>';
             
@@ -909,6 +986,7 @@
                 const filteredRecords = processRecords(
                     data, 
                     unitFilter.value, 
+                    companyFilter.value,
                     dateFilter.value,
                     shiftFilter.value
                 );
@@ -922,9 +1000,9 @@
             });
         }
 
-        // Initialize filters event listeners
+        // Inicializa os listeners dos filtros
         function initFilters() {
-            [unitFilter, dateFilter, shiftFilter].forEach(filter => {
+            [unitFilter, companyFilter, dateFilter, shiftFilter].forEach(filter => {
                 filter.addEventListener('change', () => {
                     const recordsRef = ref(database, 'rdRecords');
                     onValue(recordsRef, (snapshot) => {
@@ -932,6 +1010,7 @@
                         const filteredRecords = processRecords(
                             data, 
                             unitFilter.value, 
+                            companyFilter.value,
                             dateFilter.value,
                             shiftFilter.value
                         );
@@ -941,7 +1020,7 @@
             });
         }
 
-        // Handle login
+        // Manipula o login
         function handleLogin() {
             const email = loginEmail.value.trim();
             const password = loginPassword.value.trim();
@@ -957,8 +1036,9 @@
             
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    if (userCredential.user.emailVerified) {
-                        // Email verificado, mostrar app
+                    currentUser = userCredential.user;
+                    if (currentUser.emailVerified) {
+                        // Email verificado, mostra o app
                         loginContainer.style.display = 'none';
                         verifyEmailContainer.style.display = 'none';
                         appContainer.style.display = 'block';
@@ -992,9 +1072,10 @@
                 });
         }
 
-        // Handle logout
+        // Manipula o logout
         function handleLogout() {
             signOut(auth).then(() => {
+                currentUser = null;
                 loginContainer.style.display = 'block';
                 verifyEmailContainer.style.display = 'none';
                 appContainer.style.display = 'none';
@@ -1007,12 +1088,11 @@
             });
         }
 
-        // Resend verification email
+        // Reenvia email de verificação
         function handleResendVerification() {
-            const user = auth.currentUser;
-            if (!user) return;
+            if (!currentUser) return;
             
-            sendEmailVerification(user)
+            sendEmailVerification(currentUser)
                 .then(() => {
                     alert('Email de verificação reenviado com sucesso!');
                 })
@@ -1022,15 +1102,16 @@
                 });
         }
 
-        // Initialize app
-        function initApp() {
+        // Inicializa o app
+        async function initApp() {
+            await loadUnits(); // Carrega as unidades primeiro
             initFilters();
             
-            // Set today's date as default filter
+            // Define a data de hoje como filtro padrão
             const today = new Date();
             dateFilter.valueAsDate = today;
             
-            // Load records
+            // Carrega os registros
             loadRecords();
         }
 
@@ -1040,32 +1121,34 @@
         reloadButton.addEventListener('click', () => window.location.reload());
         resendButton.addEventListener('click', handleResendVerification);
 
-        // Handle Enter key in login form
+        // Enter no campo de senha
         loginPassword.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 handleLogin();
             }
         });
 
-        // Check auth state
+        // Verifica o estado de autenticação
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                currentUser = user;
                 if (user.emailVerified) {
-                    // User is signed in and email is verified
+                    // Usuário logado e email verificado
                     loginContainer.style.display = 'none';
                     verifyEmailContainer.style.display = 'none';
                     appContainer.style.display = 'block';
                     initApp();
                     updateConnectionStatus('connected');
                 } else {
-                    // User is signed in but email is not verified
+                    // Usuário logado mas email não verificado
                     loginContainer.style.display = 'none';
                     verifyEmailContainer.style.display = 'block';
                     appContainer.style.display = 'none';
                     updateConnectionStatus('disconnected');
                 }
             } else {
-                // User is signed out
+                // Usuário não logado
+                currentUser = null;
                 loginContainer.style.display = 'block';
                 verifyEmailContainer.style.display = 'none';
                 appContainer.style.display = 'none';
@@ -1073,7 +1156,7 @@
             }
         });
 
-        // Initialize connection status
+        // Inicializa o status da conexão
         updateConnectionStatus('disconnected');
     </script>
 </body>

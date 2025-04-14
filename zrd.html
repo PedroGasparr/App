@@ -103,6 +103,15 @@
             background-color: #5a6268;
         }
 
+        .management-button {
+            background-color: var(--success);
+            margin-top: 15px;
+        }
+
+        .management-button:hover {
+            background-color: #3aa8d8;
+        }
+
         /* Employee List Styles */
         .employee-list {
             display: none;
@@ -363,9 +372,7 @@
             <label for="unit">Unidade:</label>
             <select id="unit" required>
                 <option value="">Selecione uma unidade</option>
-                <option value="FABRICA LIMEIRA">Fábrica Limeira</option>
-                <option value="CD CARIACICA">CD Cariacica</option>
-                <option value="FABRICA BELEM">Fábrica Belém</option>
+                <!-- As opções serão preenchidas dinamicamente pelo JavaScript -->
             </select>
 
             <label for="shift">Turno:</label>
@@ -374,6 +381,15 @@
                 <option value="tarde">Tarde</option>
                 <option value="Noite">Noite</option>
                 <option value="Intermediario">Intermediario</option>
+            </select>
+
+            <label for="empresa">Empresa</label>
+            <select id="empresa" required>
+                <option value="Null">Selecione uma Empresa</option>
+                <option value="Suzano">Suzano</option>
+                <option value="Guizilim">Guizilim</option>
+                <option value="JOHN DEERE">Jonh Deere</option>
+                <option value="OJI PAPÉIS">Oji Papéis</option>
             </select>
 
             <label for="responsible">Responsável:</label>
@@ -411,16 +427,16 @@
                 </div>
             </div>
             
-            <label for="photo">Foto (opcional):</label>
-            <input type="file" id="photo" accept="image/*">
+            <label for="photo">Foto (obrigatório):</label>
+            <input type="file" id="photo" accept="image/*" required>
             <img id="imagePreview">
             
             <button type="submit">Enviar</button>
         </form>
 
         <button class="back-button" onclick="window.location.href = 'zhome.html';">Voltar ao Dashboard</button>
-    </div>
-
+       </div>
+    <script src="js.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { 
@@ -432,51 +448,15 @@
             getDatabase, 
             ref, 
             push, 
-            set 
+            set,
+            get,
+            child
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
-        // Configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
-            authDomain: "application-gzl.firebaseapp.com",
-            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
-            projectId: "application-gzl",
-            storageBucket: "application-gzl.appspot.com",
-            messagingSenderId: "319900903265",
-            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
-            measurementId: "G-ZRRFQZXT54"
-        };
 
         // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const database = getDatabase(app);
-        
-        // Lista de funcionários do CD Cariacica
-        const cariacicaEmployees = [
-            "ERICK DA SILVA PEREIRA",
-            "FABRICIO PEREIRA VIDA",
-            "GABRIEL SILVA DE ANDRADE",
-            "LUCAS ISLAM SANTOS MENESES",
-            "LUCAS MARTINS",
-            "RUAN DE OLIVEIRA VIANA",
-            "THAIRONY OLIVEIRA AMARAL",
-            "TIAGO DO COUTO COSTA",
-            "YARLEY PEREIRA SALES",
-            "RAPAHEL PEREIRA ASSEM",
-            "KESSIA VIEIRA GONÇALVES",
-            "FILIPE ISMAEL",
-            "DANIEL ROCHA",
-            "ADRIANO DO SACRAMENTO",
-            "IGOR FERREIRA",
-            "DAVI LUCAS LEOLPOLDO",
-            "YAGO VASCONCELOS",
-            "ISLAM ALEXANDRE",
-            "MARCO COUTINHO",
-            "MARCO FINCO",
-            "MARINALDO SANTOS",
-            "JACILDO MENDONÇA"
-        ];
         
         // Variáveis globais
         let imageBase64 = null;
@@ -484,6 +464,8 @@
         let appliedPercentage = 0;
         let isSpecialDay = false;
         let currentUser = null;
+        let units = []; // Armazenará as unidades do banco de dados
+        let employees = {}; // Armazenará os funcionários por unidade
 
         // Feriados nacionais do Brasil
         const brazilianHolidays = [
@@ -520,6 +502,83 @@
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
             return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Carrega as unidades do banco de dados
+        async function loadUnits() {
+            try {
+                showLoader();
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, 'units'));
+                
+                if (snapshot.exists()) {
+                    units = [];
+                    const unitsData = snapshot.val();
+                    
+                    for (const unitId in unitsData) {
+                        units.push({
+                            id: unitId,
+                            name: unitsData[unitId].name
+                        });
+                    }
+                    
+                    // Ordena as unidades por nome
+                    units.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    // Atualiza o dropdown de unidades
+                    const unitSelect = document.getElementById('unit');
+                    unitSelect.innerHTML = '<option value="">Selecione uma unidade</option>';
+                    
+                    units.forEach(unit => {
+                        const option = document.createElement('option');
+                        option.value = unit.id;
+                        option.textContent = unit.name;
+                        unitSelect.appendChild(option);
+                    });
+                } else {
+                    console.log("Nenhuma unidade encontrada no banco de dados");
+                }
+                
+                hideLoader();
+            } catch (error) {
+                hideLoader();
+                console.error("Erro ao carregar unidades:", error);
+                alert("Erro ao carregar unidades. Por favor, recarregue a página.");
+            }
+        }
+
+        // Carrega os funcionários de uma unidade específica
+        async function loadEmployees(unitId) {
+            try {
+                showLoader();
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, `units/${unitId}/employees`));
+                
+                if (snapshot.exists()) {
+                    employees[unitId] = [];
+                    const employeesData = snapshot.val();
+                    
+                    for (const employeeId in employeesData) {
+                        employees[unitId].push(employeesData[employeeId].name);
+                    }
+                    
+                    // Ordena os funcionários por nome
+                    employees[unitId].sort((a, b) => a.localeCompare(b));
+                    
+                    // Gera os checkboxes para os funcionários
+                    generateEmployeeCheckboxes(unitId);
+                } else {
+                    console.log(`Nenhum funcionário encontrado para a unidade ${unitId}`);
+                    employees[unitId] = [];
+                    document.getElementById('employeeCheckboxes').innerHTML = '<p>Nenhum funcionário cadastrado nesta unidade.</p>';
+                }
+                
+                hideLoader();
+            } catch (error) {
+                hideLoader();
+                console.error(`Erro ao carregar funcionários da unidade ${unitId}:`, error);
+                alert("Erro ao carregar funcionários. Por favor, tente novamente.");
+            }
         }
 
         // Cria os inputs dinâmicos para horas de reposição
@@ -641,11 +700,16 @@
         }
 
         // Gera os checkboxes dos funcionários
-        function generateEmployeeCheckboxes() {
+        function generateEmployeeCheckboxes(unitId) {
             const container = document.getElementById('employeeCheckboxes');
             container.innerHTML = '';
             
-            cariacicaEmployees.forEach(employee => {
+            if (!employees[unitId] || employees[unitId].length === 0) {
+                container.innerHTML = '<p>Nenhum funcionário cadastrado nesta unidade.</p>';
+                return;
+            }
+            
+            employees[unitId].forEach(employee => {
                 const checkboxDiv = document.createElement('div');
                 checkboxDiv.className = 'employee-checkbox-container';
                 
@@ -713,13 +777,16 @@
 
         // Atualiza a interface com base na unidade selecionada
         function updateInterfaceBasedOnUnit() {
-            const unit = document.getElementById('unit').value;
+            const unitId = document.getElementById('unit').value;
             const commentsContainer = document.getElementById('commentsContainer');
             const employeeListContainer = document.getElementById('employeeListContainer');
             
-            if (unit === "CD CARIACICA") {
+            if (unitId) {
                 commentsContainer.style.display = 'none';
                 employeeListContainer.style.display = 'block';
+                
+                // Carrega os funcionários da unidade selecionada
+                loadEmployees(unitId);
             } else {
                 commentsContainer.style.display = 'block';
                 employeeListContainer.style.display = 'none';
@@ -737,12 +804,12 @@
         }
 
         // Inicialização quando o DOM estiver carregado
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             // Configura a data/hora atual
             document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
             
-            // Gera os checkboxes dos funcionários
-            generateEmployeeCheckboxes();
+            // Carrega as unidades do banco de dados
+            await loadUnits();
             
             // Configura os event listeners
             document.getElementById('replacementCount').addEventListener('input', createReplacementHoursInputs);
@@ -800,8 +867,10 @@
                 
                 // Coleta os dados do formulário
                 const rdDate = document.getElementById('rdDate').value;
-                const unit = document.getElementById('unit').value;
+                const unitId = document.getElementById('unit').value;
+                const unitName = units.find(u => u.id === unitId)?.name || unitId;
                 const shift = document.getElementById('shift').value;
+                const empresa = document.getElementById('empresa').value;
                 const responsible = document.getElementById('responsible').value;
                 const attended = parseInt(document.getElementById('attended').value) || 0;
                 const absent = parseInt(document.getElementById('absent').value) || 0;
@@ -819,7 +888,7 @@
                 });
 
                 // Validação básica
-                if (!rdDate || !unit || !responsible || isNaN(attended) || isNaN(absent)) {
+                if (!rdDate || !unitId || !responsible || isNaN(attended) || isNaN(absent)) {
                     hideLoader();
                     alert("Por favor, preencha todos os campos obrigatórios.");
                     return;
@@ -827,7 +896,7 @@
 
                 // Obtém observações ou lista de faltantes
                 let comments = "";
-                if (unit === "CD CARIACICA") {
+                if (unitId) {
                     const checkboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
                     const selectedEmployees = Array.from(checkboxes).map(cb => {
                         const employeeName = cb.value;
@@ -844,8 +913,10 @@
                     // Prepara os dados para salvar
                     const recordData = {
                         rdDate,
-                        unit,
+                        unitId,
+                        unitName,
                         shift,
+                        empresa,
                         responsible,
                         attended,
                         absent,
