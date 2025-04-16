@@ -464,6 +464,100 @@
                 width: 100%;
             }
         }
+        /* Estilos para o modal de edição */
+.edit-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: var(--border-radius);
+    width: 90%;
+    max-width: 400px;
+    box-shadow: var(--box-shadow);
+}
+
+.edit-modal h3 {
+    margin-bottom: 15px;
+    color: var(--dark);
+}
+
+.edit-modal-body {
+    margin-bottom: 20px;
+}
+
+.edit-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.edit-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.edit-modal-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-modal-cancel, .edit-modal-confirm {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.edit-modal-cancel {
+    background-color: var(--gray);
+    color: white;
+}
+
+.edit-modal-cancel:hover {
+    background-color: #5a6268;
+}
+
+.edit-modal-confirm {
+    background-color: var(--primary);
+    color: white;
+}
+
+.edit-modal-confirm:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Botão de edição */
+.edit-absence-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 8px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background-color: rgba(0,0,0,0.05);
+    transition: var(--transition);
+}
+
+.edit-absence-btn:hover {
+    background-color: rgba(67, 97, 238, 0.1);
+}
     </style>
 </head>
 <body>
@@ -550,6 +644,30 @@
         <span>Desconectado</span>
     </div>
 
+    <!-- Modal para edição de falta/atestado -->
+<div class="edit-modal" id="editModal" style="display: none;">
+    <div class="edit-modal-content">
+        <h3>Editar Tipo de Ausência</h3>
+        <div class="edit-modal-body">
+            <p>Funcionário: <strong id="editEmployeeName"></strong></p>
+            <div class="edit-options">
+                <label>
+                    <input type="radio" name="absenceType" value="falta" checked>
+                    Falta
+                </label>
+                <label>
+                    <input type="radio" name="absenceType" value="atestado">
+                    Atestado
+                </label>
+            </div>
+        </div>
+        <div class="edit-modal-buttons">
+            <button class="edit-modal-cancel" id="cancelEdit">Cancelar</button>
+            <button class="edit-modal-confirm" id="confirmEdit">Salvar</button>
+        </div>
+    </div>
+</div>
+
     <!-- Adicione este script antes do seu módulo JavaScript -->
     <script>
         // Configuração do Firebase - SUBSTITUA COM SUAS PRÓPRIAS CREDENCIAIS
@@ -574,7 +692,8 @@
             onValue, 
             remove,
             get,
-            child 
+            child, 
+            update
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { 
             getAuth, 
@@ -752,50 +871,51 @@
         }
 
         // Formata a lista de funcionários ausentes com tipo (falta/atestado)
-        function formatAbsentEmployees(comments) {
-            if (!comments) return '';
+        function formatAbsentEmployees(comments, recordKey) {
+    if (!comments) return '';
+    
+    try {
+        // Verifica se é uma lista com tipos de ausência (do CD Cariacica)
+        if (comments.includes('(falta)') || comments.includes('(atestado)')) {
+            const employees = comments.split(', ')
+                .map(e => e.trim())
+                .filter(e => e);
             
-            try {
-                // Verifica se é uma lista com tipos de ausência (do CD Cariacica)
-                if (comments.includes('(falta)') || comments.includes('(atestado)')) {
-                    const employees = comments.split(', ')
-                        .map(e => e.trim())
-                        .filter(e => e);
-                    
-                    if (employees.length === 0) return '';
-                    
-                    return `
-                        <div class="absent-list">
-                            <div class="absent-list-title">Funcionários ausentes:</div>
-                            ${employees.map(e => {
-                                const isAtestado = e.includes('(atestado)');
-                                const employeeName = e.replace(/\s*\((falta|atestado)\)$/, '');
-                                const badgeClass = isAtestado ? 'absence-atestado' : 'absence-falta';
-                                const badgeText = isAtestado ? 'Atestado' : 'Falta';
-                                
-                                return `
-                                    <div class="absent-employee">
-                                        ${employeeName}
-                                        <span class="absence-type-badge ${badgeClass}">${badgeText}</span>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    `;
-                }
-                
-                // Para outras unidades ou formato antigo
-                return `
-                    <div class="absent-list">
-                        <div class="absent-list-title">Observações:</div>
-                        <div>${comments}</div>
-                    </div>
-                `;
-            } catch (e) {
-                console.error('Erro ao formatar lista de faltantes:', e);
-                return comments;
-            }
+            if (employees.length === 0) return '';
+            
+            return `
+                <div class="absent-list">
+                    <div class="absent-list-title">Funcionários ausentes:</div>
+                    ${employees.map(e => {
+                        const isAtestado = e.includes('(atestado)');
+                        const employeeName = e.replace(/\s*\((falta|atestado)\)$/, '');
+                        const badgeClass = isAtestado ? 'absence-atestado' : 'absence-falta';
+                        const badgeText = isAtestado ? 'Atestado' : 'Falta';
+                        
+                        return `
+                            <div class="absent-employee">
+                                ${employeeName}
+                                <span class="absence-type-badge ${badgeClass}">${badgeText}</span>
+                                <button class="edit-absence-btn" data-record-id="${recordKey}" data-employee="${employeeName}" data-current-type="${isAtestado ? 'atestado' : 'falta'}">✏️</button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
         }
+        
+        // Para outras unidades ou formato antigo
+        return `
+            <div class="absent-list">
+                <div class="absent-list-title">Observações:</div>
+                <div>${comments}</div>
+            </div>
+        `;
+    } catch (e) {
+        console.error('Erro ao formatar lista de faltantes:', e);
+        return comments;
+    }
+}
 
         // Filtra e ordena os registros
         function processRecords(data, unitFilter, companyFilter, dateFilter, shiftFilter) {
@@ -834,7 +954,7 @@
         // Exibe os registros
         function displayRecords(filteredRecords) {
             recordsContainer.innerHTML = '';
-    
+           
             if (filteredRecords.length === 0) {
                 recordsContainer.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
                 return;
@@ -896,7 +1016,7 @@
                         <div class="info-row">
                             <span class="info-label">${record.unit === 'CD CARIACICA' ? 'Faltantes' : 'Observações'}:</span>
                             <div class="info-value">
-                                ${formatAbsentEmployees(record.comments)}
+                               ${formatAbsentEmployees(record.comments, record.key)}
                             </div>
                         </div>` : ''}
                         
@@ -924,6 +1044,7 @@
                     showPasswordModal(recordId);
                 });
             });
+            addEditButtonsListeners();
         }
 
         // Mostra modal de senha para confirmação de exclusão
@@ -1155,6 +1276,115 @@
                 updateConnectionStatus('disconnected');
             }
         });
+        // Variáveis para controle da edição
+let currentEditRecordId = null;
+let currentEditEmployee = null;
+let currentEditComments = null;
+
+// Mostra o modal de edição
+function showEditModal(recordId, employeeName, currentType) {
+    console.log('Modal de edição chamado para:', employeeName, 'no registro:', recordId);
+    const modal = document.getElementById('editModal');
+    const employeeNameElement = document.getElementById('editEmployeeName');
+    const cancelBtn = document.getElementById('cancelEdit');
+    const confirmBtn = document.getElementById('confirmEdit');
+    const radioButtons = document.querySelectorAll('input[name="absenceType"]');
+
+    // Define os valores atuais
+    currentEditRecordId = recordId;
+    currentEditEmployee = employeeName;
+    employeeNameElement.textContent = employeeName;
+    
+    // Marca o radio button correto
+    radioButtons.forEach(radio => {
+        radio.checked = (radio.value === currentType);
+    });
+
+    modal.style.display = 'flex';
+
+    const closeModal = () => {
+        modal.style.display = 'none';
+    };
+
+    cancelBtn.onclick = closeModal;
+
+    confirmBtn.onclick = async () => {
+        const selectedType = document.querySelector('input[name="absenceType"]:checked').value;
+        await updateAbsenceType(recordId, employeeName, selectedType);
+        closeModal();
+    };
+}
+
+// Atualiza o tipo de ausência no banco de dados
+async function updateAbsenceType(recordId, employeeName, newType) {
+    console.log('Tentando atualizar:', {recordId, employeeName, newType});
+    try {
+        // Obtém o registro atual
+        const recordRef = ref(database, `rdRecords/${recordId}`);
+        console.log('Referência do registro:', recordRef.toString());
+        
+        const snapshot = await get(recordRef);
+        console.log('Snapshot existe?', snapshot.exists());
+        
+        if (!snapshot.exists()) {
+            console.error('Registro não encontrado no caminho:', `rdRecords/${recordId}`);
+            throw new Error('Registro não encontrado');
+        }
+        
+        const record = snapshot.val();
+        console.log('Registro atual:', record);
+        let comments = record.comments || '';
+        console.log('Comentários atuais:', comments);
+        
+        // Remove qualquer "(falta)" ou "(atestado)" existente no nome do funcionário
+        const cleanEmployeeName = employeeName.replace(/\s*\((falta|atestado)\)\s*$/, '');
+        
+        // Remove múltiplas ocorrências de (falta) ou (atestado)
+        comments = comments.replace(
+            new RegExp(`${cleanEmployeeName}\\s*(\\((falta|atestado)\\)\\s*)+`, 'g'),
+            cleanEmployeeName
+        );
+        
+        // Adiciona o novo tipo de ausência
+        comments = comments.replace(
+            cleanEmployeeName,
+            `${cleanEmployeeName} (${newType})`
+        );
+        
+        // Atualiza o registro no banco de dados
+        await update(recordRef, {
+            comments: comments
+        });
+        
+        console.log('Registro atualizado com sucesso');
+        alert('Tipo de ausência atualizado com sucesso!');
+        
+        // Recarrega os registros para refletir a mudança
+        loadRecords();
+        
+    } catch (error) {
+        console.error('Erro detalhado:', {
+            error,
+            message: error.message,
+            stack: error.stack
+        });
+        alert('Ocorreu um erro ao atualizar o tipo de ausência: ' + error.message);
+    }
+}
+// Adiciona listeners para os botões de edição após carregar os registros
+function addEditButtonsListeners() {
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('edit-absence-btn')) {
+            e.stopPropagation();
+            const recordId = e.target.getAttribute('data-record-id');
+            const employee = e.target.getAttribute('data-employee');
+            const currentType = e.target.getAttribute('data-current-type');
+            showEditModal(recordId, employee, currentType);
+        }
+    });
+}
+// Inicializa os listeners para os botões de edição
+addEditButtonsListeners();
 
         // Inicializa o status da conexão
         updateConnectionStatus('disconnected');
