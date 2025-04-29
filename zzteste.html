@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard RD Records</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        /* Estilos do formulário de login */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .login-button {
+            width: 100%;
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .login-button:hover {
+            background-color: #2980b9;
+        }
+        .error-message {
+            color: #e74c3c;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .success-message {
+            color: #2ecc71;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        /* Estilos do dashboard */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .data-table {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .date-filter {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .date-filter input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .date-filter button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .date-filter button:hover {
+            background-color: #2980b9;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #7f8c8d;
+        }
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .logout-button:hover {
+            background-color: #c0392b;
+        }
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <h2>Login RD Records</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="seu@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" required placeholder="Sua senha">
+                </div>
+                <button type="submit" class="login-button">Entrar</button>
+                <div id="loginMessage" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Dashboard (inicialmente oculto) -->
+    <div id="dashboardScreen" style="display: none;">
+        <button id="logoutButton" class="logout-button">Sair</button>
+        <div class="container">
+            <h1>Dashboard de Preenchimento RD Records</h1>
+            
+            <div class="date-filter">
+                <input type="date" id="startDate">
+                <input type="date" id="endDate">
+                <button id="filterButton">Filtrar</button>
+                <button id="resetButton">Resetar</button>
+            </div>
+            
+            <div id="loading" class="loading">Carregando dados...</div>
+            
+            <div class="dashboard" id="dashboard" style="display: none;">
+                <div class="chart-container">
+                    <h2>Preenchimentos por Unidade</h2>
+                    <canvas id="unitsChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h2>Preenchimentos por Turno</h2>
+                    <canvas id="shiftsChart"></canvas>
+                </div>
+                
+                <div class="data-table" style="grid-column: span 2;">
+                    <h2>Registros Recentes</h2>
+                    <table id="recordsTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Unidade</th>
+                                <th>Turno</th>
+                                <th>Responsável</th>
+                                <th>Atendidos</th>
+                                <th>Ausentes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsBody">
+                            <!-- Dados serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZwa4XNqlupNDLs7-CRQbhr5pRT4NyFBA",
+            authDomain: "application-gzl.firebaseapp.com",
+            databaseURL: "https://application-gzl-default-rtdb.firebaseio.com",
+            projectId: "application-gzl",
+            storageBucket: "application-gzl.firebasestorage.app",
+            messagingSenderId: "319900903265",
+            appId: "1:319900903265:web:a8f400aeb7a697fc168720",
+            measurementId: "G-ZRRFQZXT54"
+        };
+
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        // Variáveis globais para os gráficos
+        let unitsChart, shiftsChart;
+        
+        // Elementos da UI
+        const loginScreen = document.getElementById('loginScreen');
+        const dashboardScreen = document.getElementById('dashboardScreen');
+        const loginForm = document.getElementById('loginForm');
+        const loginMessage = document.getElementById('loginMessage');
+        const logoutButton = document.getElementById('logoutButton');
+        const loadingElement = document.getElementById('loading');
+        const dashboardElement = document.getElementById('dashboard');
+        const recordsBody = document.getElementById('recordsBody');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const filterButton = document.getElementById('filterButton');
+        const resetButton = document.getElementById('resetButton');
+
+        // Verifica o estado de autenticação ao carregar a página
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Usuário está logado
+                if (user.emailVerified) {
+                    // Email verificado, mostra o dashboard
+                    showDashboard();
+                    setDefaultDates();
+                    loadData();
+                } else {
+                    // Email não verificado
+                    auth.signOut();
+                    showMessage('Por favor, verifique seu email antes de acessar.', 'error');
+                }
+            } else {
+                // Usuário não está logado
+                showLogin();
+            }
+        });
+
+        // Configura datas padrão (últimos 7 dias)
+        function setDefaultDates() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - 7);
+            
+            startDateInput.valueAsDate = startDate;
+            endDateInput.valueAsDate = endDate;
+        }
+
+        // Mostra mensagens de feedback
+        function showMessage(message, type = 'error') {
+            loginMessage.textContent = message;
+            loginMessage.className = type + '-message';
+        }
+
+        // Mostra a tela de login
+        function showLogin() {
+            loginScreen.style.display = 'flex';
+            dashboardScreen.style.display = 'none';
+            loginForm.reset();
+        }
+
+        // Mostra o dashboard
+        function showDashboard() {
+            loginScreen.style.display = 'none';
+            dashboardScreen.style.display = 'block';
+        }
+
+        // Carrega os dados do Firebase
+        async function loadData() {
+    loadingElement.style.display = 'block';
+    dashboardElement.style.display = 'none';
+    
+    try {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        
+        const snapshot = await database.ref('rdRecords').once('value');
+        const allRecords = snapshot.val();
+        
+        console.log("Dados brutos do Firebase:", allRecords);
+        
+        if (!allRecords) {
+            throw new Error('Nenhum registro encontrado');
+        }
+        
+        // Converte o objeto Firebase em array garantindo a preservação dos campos
+        const recordsArray = Object.keys(allRecords).map(key => {
+            const record = allRecords[key];
+            return {
+                id: key,
+                ...record,
+                unit: record.unit || record.unidade || 'N/A' // Garante fallback
+            };
+        });
+        
+        console.log("Dados convertidos:", recordsArray);
+        
+        // Filtra os registros pelo período selecionado
+        const filteredRecords = recordsArray.filter(record => {
+            if (!record.rdDate) return false;
+            
+            const recordDate = record.rdDate.split('T')[0];
+            return recordDate >= startDate && recordDate <= endDate;
+        });
+        
+        // Processa os dados para os gráficos
+        processDataForCharts(filteredRecords);
+        
+        // Preenche a tabela
+        fillTable(filteredRecords);
+        
+        loadingElement.style.display = 'none';
+        dashboardElement.style.display = 'grid';
+    } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        loadingElement.textContent = "Erro ao carregar dados: " + error.message;
+    }
+}
+        
+        // Processa os dados para os gráficos
+        function processDataForCharts(records) {
+            // Dados para o gráfico de unidades
+            const unitsData = {};
+            // Dados para o gráfico de turnos
+            const shiftsData = {};
+            
+            records.forEach(record => {
+                // Contagem por unidade
+                if (record.unit) {
+                    unitsData[record.unit] = (unitsData[record.unit] || 0) + 1;
+                }
+                
+                // Contagem por turno
+                if (record.shift) {
+                    shiftsData[record.shift] = (shiftsData[record.shift] || 0) + 1;
+                }
+            });
+            
+            // Ordena unidades por quantidade (decrescente)
+            const sortedUnits = Object.entries(unitsData).sort((a, b) => b[1] - a[1]);
+            const unitLabels = sortedUnits.map(item => item[0]);
+            const unitValues = sortedUnits.map(item => item[1]);
+            
+            // Ordena turnos por quantidade (decrescente)
+            const sortedShifts = Object.entries(shiftsData).sort((a, b) => b[1] - a[1]);
+            const shiftLabels = sortedShifts.map(item => item[0]);
+            const shiftValues = sortedShifts.map(item => item[1]);
+            
+            // Cria ou atualiza os gráficos
+            createOrUpdateCharts(unitLabels, unitValues, shiftLabels, shiftValues);
+        }
+        
+        // Cria ou atualiza os gráficos
+        function createOrUpdateCharts(unitLabels, unitValues, shiftLabels, shiftValues) {
+            const unitsCtx = document.getElementById('unitsChart').getContext('2d');
+            const shiftsCtx = document.getElementById('shiftsChart').getContext('2d');
+            
+            // Destrói gráficos existentes se eles existirem
+            if (unitsChart) unitsChart.destroy();
+            if (shiftsChart) shiftsChart.destroy();
+            
+            // Gráfico de unidades
+            unitsChart = new Chart(unitsCtx, {
+                type: 'bar',
+                data: {
+                    labels: unitLabels,
+                    datasets: [{
+                        label: 'Preenchimentos por Unidade',
+                        data: unitValues,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico de turnos
+            shiftsChart = new Chart(shiftsCtx, {
+                type: 'pie',
+                data: {
+                    labels: shiftLabels,
+                    datasets: [{
+                        label: 'Preenchimentos por Turno',
+                        data: shiftValues,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(255, 205, 86, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(201, 203, 207, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 205, 86, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(201, 203, 207, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+        
+        // Preenche a tabela com os registros
+        function fillTable(records) {
+    // Ordena registros por data (mais recente primeiro)
+    records.sort((a, b) => new Date(b.rdDate) - new Date(a.rdDate));
+    
+    // Limpa a tabela
+    recordsBody.innerHTML = '';
+    
+    // Adiciona os registros à tabela
+    records.forEach(record => {
+        console.log("Registro sendo processado:", record); // Verifique cada registro
+        
+        const row = document.createElement('tr');
+        const date = new Date(record.rdDate);
+        const formattedDate = date.toLocaleDateString('pt-BR');
+        
+        // Verificação robusta do campo unit
+        const unitValue = record.hasOwnProperty('unit') ? record.unit : 
+                         record.hasOwnProperty('unidade') ? record.unidade : 'N/A';
+        
+        row.innerHTML = `
+            <td>${formattedDate}</td>
+            <td>${record.unitName                || 'N/A'}</td>
+            <td>${record.shift || 'N/A'}</td>
+            <td>${record.responsible || 'N/A'}</td>
+            <td>${record.replacementCount || '0'}</td>
+            <td>${record.replacementHours || '0'}</td>
+        `;
+        recordsBody.appendChild(row);
+    });
+}
+
+        
+        // Event Listeners
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                if (!user.emailVerified) {
+                    await auth.signOut();
+                    showMessage('Por favor, verifique seu email antes de acessar.', 'error');
+                    return;
+                }
+                
+                showDashboard();
+                setDefaultDates();
+                loadData();
+            } catch (error) {
+                console.error("Erro de login:", error);
+                showMessage('Email ou senha incorretos.', 'error');
+            }
+        });
+        
+        logoutButton.addEventListener('click', () => {
+            auth.signOut();
+            showLogin();
+        });
+        
+        filterButton.addEventListener('click', loadData);
+        resetButton.addEventListener('click', () => {
+            setDefaultDates();
+            loadData();
+        });
+    </script>
+</body>
+</html>

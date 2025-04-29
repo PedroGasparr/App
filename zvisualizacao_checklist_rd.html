@@ -159,14 +159,45 @@
         }
 
         .absence-falta {
-            background-color: #ffebee;
-            color: #c62828;
-        }
+    background-color: #ffebee;
+    color: #c62828;
+}
 
-        .absence-atestado {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-        }
+.absence-atestado {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.absence-ferias {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+
+/* Estilos para os badges de tipo de ausência */
+.absence-type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: 10px;
+}
+
+.absence-type-badge.absence-falta {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.absence-type-badge.absence-atestado {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.absence-type-badge.absence-ferias {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+        
 
         /* Responsividade - 1 card por linha em telas menores */
         @media (max-width: 768px) {
@@ -871,12 +902,13 @@
         }
 
         // Formata a lista de funcionários ausentes com tipo (falta/atestado)
-        function formatAbsentEmployees(comments, recordKey) {
+        // Formata a lista de funcionários ausentes com tipo (falta/atestado/ferias)
+function formatAbsentEmployees(comments, recordKey) {
     if (!comments) return '';
     
     try {
-        // Verifica se é uma lista com tipos de ausência (do CD Cariacica)
-        if (comments.includes('(falta)') || comments.includes('(atestado)')) {
+        // Verifica se é uma lista com tipos de ausência
+        if (comments.includes('(falta)') || comments.includes('(atestado)') || comments.includes('(ferias)')) {
             const employees = comments.split(', ')
                 .map(e => e.trim())
                 .filter(e => e);
@@ -888,15 +920,26 @@
                     <div class="absent-list-title">Funcionários ausentes:</div>
                     ${employees.map(e => {
                         const isAtestado = e.includes('(atestado)');
-                        const employeeName = e.replace(/\s*\((falta|atestado)\)$/, '');
-                        const badgeClass = isAtestado ? 'absence-atestado' : 'absence-falta';
-                        const badgeText = isAtestado ? 'Atestado' : 'Falta';
+                        const isFerias = e.includes('(ferias)');
+                        const employeeName = e.replace(/\s*\((falta|atestado|ferias)\)$/, '');
+                        let badgeClass, badgeText;
+                        
+                        if (isAtestado) {
+                            badgeClass = 'absence-atestado';
+                            badgeText = 'Atestado';
+                        } else if (isFerias) {
+                            badgeClass = 'absence-ferias';
+                            badgeText = 'Férias';
+                        } else {
+                            badgeClass = 'absence-falta';
+                            badgeText = 'Falta';
+                        }
                         
                         return `
                             <div class="absent-employee">
                                 ${employeeName}
                                 <span class="absence-type-badge ${badgeClass}">${badgeText}</span>
-                                <button class="edit-absence-btn" data-record-id="${recordKey}" data-employee="${employeeName}" data-current-type="${isAtestado ? 'atestado' : 'falta'}">✏️</button>
+                                <button class="edit-absence-btn" data-record-id="${recordKey}" data-employee="${employeeName}" data-current-type="${isAtestado ? 'atestado' : isFerias ? 'ferias' : 'falta'}">✏️</button>
                             </div>
                         `;
                     }).join('')}

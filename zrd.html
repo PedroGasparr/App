@@ -759,9 +759,15 @@
                 const optionAtestado = document.createElement('option');
                 optionAtestado.value = 'atestado';
                 optionAtestado.textContent = 'Atestado';
+
+                const optionFerias = document.createElement('option');
+                optionFerias.value = 'ferias';
+                optionFerias.textContent = 'Férias';
+                
                 
                 select.appendChild(optionFalta);
                 select.appendChild(optionAtestado);
+                select.appendChild(optionFerias);
                 
                 optionsDiv.appendChild(optionLabel);
                 optionsDiv.appendChild(select);
