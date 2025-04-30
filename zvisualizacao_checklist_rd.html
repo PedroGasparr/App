@@ -163,6 +163,11 @@
     color: #c62828;
 }
 
+.absence-atendendo-outra-unidade {
+    background-color: #e5f1fc;
+    color: #2852c6;
+}
+
 .absence-atestado {
     background-color: #e8f5e9;
     color: #2e7d32;
@@ -186,6 +191,10 @@
 .absence-type-badge.absence-falta {
     background-color: #ffebee;
     color: #c62828;
+}
+.absence-type-badge.absence-atendendo-outra-unidade {
+    background-color: #e5f1fc;
+    color: #2838c6;
 }
 
 .absence-type-badge.absence-atestado {
@@ -901,14 +910,18 @@
             `;
         }
 
-        // Formata a lista de funcionários ausentes com tipo (falta/atestado)
-        // Formata a lista de funcionários ausentes com tipo (falta/atestado/ferias)
-function formatAbsentEmployees(comments, recordKey) {
+
+        function formatAbsentEmployees(comments, recordKey) {
     if (!comments) return '';
     
     try {
         // Verifica se é uma lista com tipos de ausência
-        if (comments.includes('(falta)') || comments.includes('(atestado)') || comments.includes('(ferias)')) {
+        if (
+            comments.includes('(falta)') ||
+            comments.includes('(atestado)') ||
+            comments.includes('(atendendo outra unidade)') ||
+            comments.includes('(ferias)')
+        ) {
             const employees = comments.split(', ')
                 .map(e => e.trim())
                 .filter(e => e);
@@ -921,25 +934,33 @@ function formatAbsentEmployees(comments, recordKey) {
                     ${employees.map(e => {
                         const isAtestado = e.includes('(atestado)');
                         const isFerias = e.includes('(ferias)');
-                        const employeeName = e.replace(/\s*\((falta|atestado|ferias)\)$/, '');
-                        let badgeClass, badgeText;
+                        const isAtendendoOutraUnidade = e.includes('(atendendo outra unidade)');
+                        const employeeName = e.replace(/\s*\((falta|atestado|atendendo outra unidade|ferias)\)$/, '');
+                        let badgeClass, badgeText, currentType;
                         
                         if (isAtestado) {
                             badgeClass = 'absence-atestado';
                             badgeText = 'Atestado';
+                            currentType = 'atestado';
                         } else if (isFerias) {
                             badgeClass = 'absence-ferias';
                             badgeText = 'Férias';
+                            currentType = 'ferias';
+                        } else if (isAtendendoOutraUnidade) {
+                            badgeClass = 'absence-atendendo-outra-unidade';
+                            badgeText = 'Atendendo outra unidade';
+                            currentType = 'atendendo outra unidade';
                         } else {
                             badgeClass = 'absence-falta';
                             badgeText = 'Falta';
+                            currentType = 'falta';
                         }
                         
                         return `
                             <div class="absent-employee">
                                 ${employeeName}
                                 <span class="absence-type-badge ${badgeClass}">${badgeText}</span>
-                                <button class="edit-absence-btn" data-record-id="${recordKey}" data-employee="${employeeName}" data-current-type="${isAtestado ? 'atestado' : isFerias ? 'ferias' : 'falta'}">✏️</button>
+                                <button class="edit-absence-btn" data-record-id="${recordKey}" data-employee="${employeeName}" data-current-type="${currentType}">✏️</button>
                             </div>
                         `;
                     }).join('')}
@@ -947,7 +968,7 @@ function formatAbsentEmployees(comments, recordKey) {
             `;
         }
         
-        // Para outras unidades ou formato antigo
+        // Para outras observações
         return `
             <div class="absent-list">
                 <div class="absent-list-title">Observações:</div>
@@ -959,6 +980,7 @@ function formatAbsentEmployees(comments, recordKey) {
         return comments;
     }
 }
+
 
         // Filtra e ordena os registros
         function processRecords(data, unitFilter, companyFilter, dateFilter, shiftFilter) {

@@ -763,11 +763,16 @@
                 const optionFerias = document.createElement('option');
                 optionFerias.value = 'ferias';
                 optionFerias.textContent = 'Férias';
+
+                const optionoutras = document.createElement('option');
+                optionoutras.value = 'atendendo outra unidade';
+                optionoutras.textContent = 'Atendendo Outra Unidade';
                 
                 
                 select.appendChild(optionFalta);
                 select.appendChild(optionAtestado);
                 select.appendChild(optionFerias);
+                select.appendChild(optionoutras);
                 
                 optionsDiv.appendChild(optionLabel);
                 optionsDiv.appendChild(select);
