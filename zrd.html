@@ -356,6 +356,42 @@
                 width: auto;
             }
         }
+          /* Adicionar estas novas regras CSS */
+          .function-absence-container {
+            margin-top: 15px;
+        }
+        
+        .function-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .function-row select {
+            flex: 2;
+        }
+        
+        .function-row input {
+            flex: 1;
+        }
+        
+        .function-row button {
+            flex: 0.5;
+            padding: 10px;
+            background-color: #f72585;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        #addFunctionBtn {
+            background-color: #4cc9f0;
+            width: auto;
+            padding: 10px 15px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -398,6 +434,23 @@
 
             <label for="attended">Número de Pessoas Presentes:</label>
             <input type="number" id="attended" required min="0">
+
+            <div class="function-absence-container">
+                <label>Faltas por Função:</label>
+                <div id="functionAbsenceItems">
+                    <div class="function-row">
+                        <select class="function-type" required>
+                            <option value="">Selecione</option>
+                            <option value="encarregado">Encarregado</option>
+                            <option value="operador">Operador</option>
+                            <option value="ajudante">Ajudante</option>
+                        </select>
+                        <input type="number" class="absence-count" placeholder="Qtd" min="0" required>
+                        <button type="button" class="remove-btn">X</button>
+                    </div>
+                </div>
+                <button type="button" id="addFunctionBtn">+ Adicionar Função</button>
+            </div>
 
             <label for="absent">Número de Pessoas Faltantes:</label>
             <input type="number" id="absent" required min="0">
@@ -453,7 +506,7 @@
             get,
             child
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
+    
         // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -465,28 +518,21 @@
         let appliedPercentage = 0;
         let isSpecialDay = false;
         let currentUser = null;
-        let units = []; // Armazenará as unidades do banco de dados
-        let employees = {}; // Armazenará os funcionários por unidade
-
+        let units = [];
+        let employees = {};
+    
         // Feriados nacionais do Brasil
         const brazilianHolidays = [
-            "01-01", // Ano Novo
-            "04-21", // Tiradentes
-            "05-01", // Dia do Trabalho
-            "09-07", // Independência
-            "10-12", // Nossa Senhora Aparecida
-            "11-02", // Finados
-            "11-15", // Proclamação da República
-            "12-25"  // Natal
+            "01-01", "04-21", "05-01", "09-07", 
+            "10-12", "11-02", "11-15", "12-25"
         ];
-
-        // Verifica se a data é feriado
+    
+        // Funções auxiliares
         function isHoliday(date) {
             const monthDay = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             return brazilianHolidays.includes(monthDay);
         }
-
-        // Obtém a data/hora no fuso horário do Brasil
+    
         function getBrazilianDateTime() {
             const now = new Date();
             const localOffset = now.getTimezoneOffset();
@@ -494,8 +540,7 @@
             const diff = (brasilOffset + localOffset) * 60000;
             return new Date(now.getTime() + diff);
         }
-
-        // Formata a data/hora para o input datetime-local
+    
         function formatDateTime(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -504,8 +549,68 @@
             const minutes = String(date.getMinutes()).padStart(2, '0');
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
-
-        // Carrega as unidades do banco de dados
+    
+        // Funções para gerenciar faltas por função
+        function addFunctionRow() {
+            const container = document.getElementById('functionAbsenceItems');
+            const newRow = document.createElement('div');
+            newRow.className = 'function-row';
+            newRow.innerHTML = `
+                <select class="function-type" required>
+                    <option value="">Selecione</option>
+                    <option value="encarregado">Encarregado</option>
+                    <option value="operador">Operador</option>
+                    <option value="ajudante">Ajudante</option>
+                </select>
+                <input type="number" class="absence-count" placeholder="Qtd" min="0" required>
+                <button type="button" class="remove-btn">X</button>
+            `;
+            container.appendChild(newRow);
+            
+            newRow.querySelector('.remove-btn').addEventListener('click', function() {
+                if (document.querySelectorAll('.function-row').length > 1) {
+                    newRow.remove();
+                    updateTotalAbsent();
+                } else {
+                    alert('É necessário ter pelo menos uma função cadastrada.');
+                }
+            });
+            
+            newRow.querySelector('.function-type').addEventListener('change', updateTotalAbsent);
+            newRow.querySelector('.absence-count').addEventListener('input', updateTotalAbsent);
+        }
+    
+        function updateTotalAbsent() {
+            let total = 0;
+            document.querySelectorAll('.function-row').forEach(row => {
+                const count = parseInt(row.querySelector('.absence-count').value) || 0;
+                total += count;
+            });
+            document.getElementById('absent').value = total;
+        }
+    
+        function getFunctionAbsences() {
+            const absences = {
+                encarregado: 0,
+                operador:0,
+                ajudante: 0,
+                details: []
+            };
+            
+            document.querySelectorAll('.function-row').forEach(row => {
+                const type = row.querySelector('.function-type').value;
+                const count = parseInt(row.querySelector('.absence-count').value) || 0;
+                
+                if (type && count > 0) {
+                    absences[type] += count;
+                    absences.details.push({ type, count });
+                }
+            });
+            
+            return absences;
+        }
+    
+        // Funções do sistema principal
         async function loadUnits() {
             try {
                 showLoader();
@@ -514,32 +619,24 @@
                 
                 if (snapshot.exists()) {
                     units = [];
-                    const unitsData = snapshot.val();
-                    
-                    for (const unitId in unitsData) {
+                    for (const unitId in snapshot.val()) {
                         units.push({
                             id: unitId,
-                            name: unitsData[unitId].name
+                            name: snapshot.val()[unitId].name
                         });
                     }
                     
-                    // Ordena as unidades por nome
                     units.sort((a, b) => a.name.localeCompare(b.name));
                     
-                    // Atualiza o dropdown de unidades
                     const unitSelect = document.getElementById('unit');
                     unitSelect.innerHTML = '<option value="">Selecione uma unidade</option>';
-                    
                     units.forEach(unit => {
                         const option = document.createElement('option');
                         option.value = unit.id;
                         option.textContent = unit.name;
                         unitSelect.appendChild(option);
                     });
-                } else {
-                    console.log("Nenhuma unidade encontrada no banco de dados");
                 }
-                
                 hideLoader();
             } catch (error) {
                 hideLoader();
@@ -547,8 +644,7 @@
                 alert("Erro ao carregar unidades. Por favor, recarregue a página.");
             }
         }
-
-        // Carrega os funcionários de uma unidade específica
+    
         async function loadEmployees(unitId) {
             try {
                 showLoader();
@@ -557,23 +653,15 @@
                 
                 if (snapshot.exists()) {
                     employees[unitId] = [];
-                    const employeesData = snapshot.val();
-                    
-                    for (const employeeId in employeesData) {
-                        employees[unitId].push(employeesData[employeeId].name);
+                    for (const employeeId in snapshot.val()) {
+                        employees[unitId].push(snapshot.val()[employeeId].name);
                     }
                     
-                    // Ordena os funcionários por nome
                     employees[unitId].sort((a, b) => a.localeCompare(b));
-                    
-                    // Gera os checkboxes para os funcionários
                     generateEmployeeCheckboxes(unitId);
                 } else {
-                    console.log(`Nenhum funcionário encontrado para a unidade ${unitId}`);
-                    employees[unitId] = [];
                     document.getElementById('employeeCheckboxes').innerHTML = '<p>Nenhum funcionário cadastrado nesta unidade.</p>';
                 }
-                
                 hideLoader();
             } catch (error) {
                 hideLoader();
@@ -581,8 +669,7 @@
                 alert("Erro ao carregar funcionários. Por favor, tente novamente.");
             }
         }
-
-        // Cria os inputs dinâmicos para horas de reposição
+    
         function createReplacementHoursInputs() {
             const container = document.getElementById('replacementHoursContainer');
             container.innerHTML = '';
@@ -600,15 +687,12 @@
                     
                     const personLabel = document.createElement('label');
                     personLabel.textContent = `Pessoa ${i + 1}:`;
-                    personLabel.htmlFor = `replacementHour${i}`;
                     
                     const select = document.createElement('select');
-                    select.id = `replacementHour${i}`;
                     select.className = 'replacement-hour';
                     select.required = true;
                     
-                    const options = [2, 3, 4, 5, 6,7,8];
-                    options.forEach(hour => {
+                    [2, 3, 4, 5, 6, 7, 8].forEach(hour => {
                         const option = document.createElement('option');
                         option.value = hour;
                         option.textContent = `${hour} horas`;
@@ -626,8 +710,7 @@
             
             calculateReplacement();
         }
-
-        // Calcula as horas de reposição
+    
         function calculateReplacement() {
             const replacementCount = parseInt(document.getElementById('replacementCount').value) || 0;
             const hourInputs = document.querySelectorAll('.replacement-hour');
@@ -642,24 +725,18 @@
             const isHolidayToday = isHoliday(currentDate);
             
             isSpecialDay = isSunday || isHolidayToday;
+            appliedPercentage = isSpecialDay ? 100 : 50;
+            totalCalculatedHours = totalBaseHours * (1 + appliedPercentage / 100);
             
-            if (isSpecialDay) {
-                appliedPercentage = 100;
-                totalCalculatedHours = totalBaseHours; // 100% de acréscimo
-                document.getElementById('replacementCalculation').textContent = `${totalBaseHours} horas + 100%`;
-                document.getElementById('holidayInfo').innerHTML = `<span class="warning">⚠️ ${isHolidayToday ? "Feriado nacional" : "Domingo"} - 100% de acréscimo</span>`;
-            } else {
-                appliedPercentage = 50;
-                totalCalculatedHours = totalBaseHours; // 50% de acréscimo
-                document.getElementById('replacementCalculation').textContent = `${totalBaseHours} horas + 50%`;
-                document.getElementById('holidayInfo').textContent = "Dia comum - 50% de acréscimo";
-            }
+            document.getElementById('replacementCalculation').textContent = `${totalBaseHours} horas + ${appliedPercentage}%`;
+            document.getElementById('holidayInfo').innerHTML = isSpecialDay ? 
+                `<span class="warning">⚠️ ${isHolidayToday ? "Feriado nacional" : "Domingo"} - ${appliedPercentage}% de acréscimo</span>` : 
+                "Dia comum - 50% de acréscimo";
             
             document.getElementById('totalHoursDisplay').textContent = `Total: ${totalCalculatedHours} horas (${replacementCount} pessoas)`;
         }
-
-        // Comprime a imagem para reduzir o tamanho
-        function compressImage(file, maxWidth = 800, quality = 0.7) {
+    
+        async function compressImage(file, maxWidth = 800, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function(event) {
@@ -678,17 +755,12 @@
                         
                         canvas.width = width;
                         canvas.height = height;
-                        
                         ctx.drawImage(img, 0, 0, width, height);
-                        canvas.toBlob((blob) => {
-                            if (!blob) {
-                                reject(new Error("Falha ao comprimir imagem"));
-                                return;
-                            }
+                        
+                        canvas.toBlob(blob => {
+                            if (!blob) return reject(new Error("Falha ao comprimir imagem"));
                             const reader = new FileReader();
-                            reader.onloadend = () => {
-                                resolve(reader.result);
-                            };
+                            reader.onloadend = () => resolve(reader.result);
                             reader.readAsDataURL(blob);
                         }, 'image/jpeg', quality);
                     };
@@ -699,8 +771,7 @@
                 reader.readAsDataURL(file);
             });
         }
-
-        // Gera os checkboxes dos funcionários
+    
         function generateEmployeeCheckboxes(unitId) {
             const container = document.getElementById('employeeCheckboxes');
             container.innerHTML = '';
@@ -717,9 +788,6 @@
                 const checkboxDivTop = document.createElement('div');
                 checkboxDivTop.className = 'employee-checkbox-top';
                 
-                const checkboxContainer = document.createElement('div');
-                checkboxContainer.className = 'custom-checkbox';
-                
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.id = `emp-${employee.replace(/\s+/g, '-').toLowerCase()}`;
@@ -733,111 +801,84 @@
                 label.className = 'employee-name';
                 label.textContent = employee;
                 
-                checkboxContainer.appendChild(checkbox);
-                checkboxContainer.appendChild(checkmark);
-                checkboxDivTop.appendChild(checkboxContainer);
-                checkboxDivTop.appendChild(label);
-                checkboxDiv.appendChild(checkboxDivTop);
-                
-                // Container para opções de falta/atestado (inicialmente oculto)
                 const optionsDiv = document.createElement('div');
                 optionsDiv.className = 'absence-options';
                 optionsDiv.style.display = 'none';
                 
-                const optionLabel = document.createElement('label');
-                optionLabel.textContent = 'Tipo de ausência:';
-                optionLabel.htmlFor = `absence-type-${employee.replace(/\s+/g, '-').toLowerCase()}`;
-                
                 const select = document.createElement('select');
                 select.className = 'absence-type';
-                select.id = `absence-type-${employee.replace(/\s+/g, '-').toLowerCase()}`;
                 
-                const optionFalta = document.createElement('option');
-                optionFalta.value = 'falta';
-                optionFalta.textContent = 'Falta';
-                
-                const optionAtestado = document.createElement('option');
-                optionAtestado.value = 'atestado';
-                optionAtestado.textContent = 'Atestado';
-
-                const optionFerias = document.createElement('option');
-                optionFerias.value = 'ferias';
-                optionFerias.textContent = 'Férias';
-
-                const optionoutras = document.createElement('option');
-                optionoutras.value = 'atendendo outra unidade';
-                optionoutras.textContent = 'Atendendo Outra Unidade';
-                
-                
-                select.appendChild(optionFalta);
-                select.appendChild(optionAtestado);
-                select.appendChild(optionFerias);
-                select.appendChild(optionoutras);
-                
-                optionsDiv.appendChild(optionLabel);
-                optionsDiv.appendChild(select);
-                checkboxDiv.appendChild(optionsDiv);
-                
-                // Mostrar/ocultar opções quando o checkbox é clicado
-                checkbox.addEventListener('change', function() {
-                    optionsDiv.style.display = this.checked ? 'block' : 'none';
+                ['falta', 'atestado', 'ferias', 'atendendo outra unidade'].forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+                    select.appendChild(option);
                 });
                 
+                checkbox.addEventListener('change', () => {
+                    optionsDiv.style.display = checkbox.checked ? 'block' : 'none';
+                });
+                
+                checkboxDivTop.appendChild(createCheckboxContainer(checkbox, checkmark));
+                checkboxDivTop.appendChild(label);
+                optionsDiv.appendChild(select);
+                
+                checkboxDiv.appendChild(checkboxDivTop);
+                checkboxDiv.appendChild(optionsDiv);
                 container.appendChild(checkboxDiv);
             });
         }
-
-        // Atualiza a interface com base na unidade selecionada
+    
+        function createCheckboxContainer(checkbox, checkmark) {
+            const container = document.createElement('div');
+            container.className = 'custom-checkbox';
+            container.appendChild(checkbox);
+            container.appendChild(checkmark);
+            return container;
+        }
+    
         function updateInterfaceBasedOnUnit() {
             const unitId = document.getElementById('unit').value;
             const commentsContainer = document.getElementById('commentsContainer');
             const employeeListContainer = document.getElementById('employeeListContainer');
             
-            if (unitId) {
-                commentsContainer.style.display = 'none';
-                employeeListContainer.style.display = 'block';
-                
-                // Carrega os funcionários da unidade selecionada
-                loadEmployees(unitId);
-            } else {
-                commentsContainer.style.display = 'block';
-                employeeListContainer.style.display = 'none';
-            }
+            commentsContainer.style.display = unitId ? 'none' : 'block';
+            employeeListContainer.style.display = unitId ? 'block' : 'none';
+            
+            if (unitId) loadEmployees(unitId);
         }
-
-        // Mostra o loader
+    
         function showLoader() {
             document.getElementById('loader').style.display = 'flex';
         }
-
-        // Esconde o loader
+    
         function hideLoader() {
             document.getElementById('loader').style.display = 'none';
         }
-
-        // Inicialização quando o DOM estiver carregado
+    
+        // Inicialização principal
         document.addEventListener('DOMContentLoaded', async () => {
-            // Configura a data/hora atual
             document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
-            
-            // Carrega as unidades do banco de dados
             await loadUnits();
             
-            // Configura os event listeners
+            // Configura eventos
             document.getElementById('replacementCount').addEventListener('input', createReplacementHoursInputs);
             document.getElementById('rdDate').addEventListener('change', calculateReplacement);
             document.getElementById('unit').addEventListener('change', updateInterfaceBasedOnUnit);
             
-            // Event listener para a foto
+            // Configura o sistema de faltas por função
+            document.getElementById('addFunctionBtn').addEventListener('click', addFunctionRow);
+            addFunctionRow(); // Adiciona a primeira linha
+            
+            // Evento para upload de foto
             document.getElementById('photo').addEventListener('change', async (event) => {
                 const file = event.target.files[0];
                 if (file) {
                     try {
                         showLoader();
                         imageBase64 = await compressImage(file);
-                        const preview = document.getElementById('imagePreview');
-                        preview.src = imageBase64;
-                        preview.style.display = 'block';
+                        document.getElementById('imagePreview').src = imageBase64;
+                        document.getElementById('imagePreview').style.display = 'block';
                         hideLoader();
                     } catch (error) {
                         hideLoader();
@@ -847,25 +888,20 @@
                 }
             });
             
-            // Event listener para o formulário
+            // Evento de submit do formulário
             document.getElementById('rdForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 showLoader();
                 
-                // Verifica se o usuário está logado
                 if (!currentUser) {
                     hideLoader();
                     alert("Você precisa estar logado para enviar o formulário!");
-                    window.location.href = 'login.html';
-                    return;
+                    return window.location.href = 'login.html';
                 }
                 
-                // Verifica se o email foi verificado
                 if (!currentUser.emailVerified) {
                     hideLoader();
-                    const resend = confirm("Seu email não foi verificado. Deseja reenviar o email de verificação?");
-                    
-                    if (resend) {
+                    if (confirm("Seu email não foi verificado. Deseja reenviar o email de verificação?")) {
                         try {
                             await sendEmailVerification(currentUser);
                             alert("Email de verificação reenviado. Por favor, verifique sua caixa de entrada.");
@@ -878,140 +914,85 @@
                 }
                 
                 // Coleta os dados do formulário
-                const rdDate = document.getElementById('rdDate').value;
-                const unitId = document.getElementById('unit').value;
-                const unitName = units.find(u => u.id === unitId)?.name || unitId;
-                const shift = document.getElementById('shift').value;
-                const empresa = document.getElementById('empresa').value;
-                const responsible = document.getElementById('responsible').value;
-                const attended = parseInt(document.getElementById('attended').value) || 0;
-                const absent = parseInt(document.getElementById('absent').value) || 0;
-                const replacementCount = parseInt(document.getElementById('replacementCount').value) || 0;
-                
-                // Calcula o total de horas de reposição
-                const hourInputs = document.querySelectorAll('.replacement-hour');
-                let totalReplacementHours = 0;
-                const replacementHours = [];
-                
-                hourInputs.forEach(input => {
-                    const hours = parseInt(input.value) || 0;
-                    totalReplacementHours += hours;
-                    replacementHours.push(hours);
-                });
-
-                // Validação básica
-                if (!rdDate || !unitId || !responsible || isNaN(attended) || isNaN(absent)) {
+                const formData = {
+                    rdDate: document.getElementById('rdDate').value,
+                    unitId: document.getElementById('unit').value,
+                    unitName: units.find(u => u.id === document.getElementById('unit').value)?.name || '',
+                    shift: document.getElementById('shift').value,
+                    empresa: document.getElementById('empresa').value,
+                    responsible: document.getElementById('responsible').value,
+                    attended: parseInt(document.getElementById('attended').value) || 0,
+                    absent: parseInt(document.getElementById('absent').value) || 0,
+                    functionAbsences: getFunctionAbsences(),
+                    replacementCount: parseInt(document.getElementById('replacementCount').value) || 0,
+                    replacementHours: Array.from(document.querySelectorAll('.replacement-hour')).map(input => parseInt(input.value) || 0),
+                    totalReplacementHours: totalCalculatedHours,
+                    appliedPercentage,
+                    isSpecialDay,
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    comments: document.getElementById('unit').value ? 
+                        Array.from(document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked'))
+                            .map(cb => `${cb.value} (${cb.closest('.employee-checkbox-container').querySelector('.absence-type').value})`)
+                            .join(", ") || "Sem Faltas" : 
+                        document.getElementById('comments').value,
+                    photo: imageBase64 || "",
+                    timestamp: new Date().toISOString()
+                };
+    
+                // Validação
+                if (!formData.rdDate || !formData.unitId || !formData.responsible || isNaN(formData.attended) || isNaN(formData.absent)) {
                     hideLoader();
-                    alert("Por favor, preencha todos os campos obrigatórios.");
-                    return;
+                    return alert("Por favor, preencha todos os campos obrigatórios.");
                 }
-
-                // Obtém observações ou lista de faltantes
-                let comments = "";
-                if (unitId) {
-                    const checkboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
-                    const selectedEmployees = Array.from(checkboxes).map(cb => {
-                        const employeeName = cb.value;
-                        const container = cb.closest('.employee-checkbox-container');
-                        const absenceType = container.querySelector('.absence-type').value;
-                        return `${employeeName} (${absenceType})`;
-                    });
-                    comments = selectedEmployees.length > 0 ? selectedEmployees.join(", ") : "Sem Faltas";
-                } else {
-                    comments = document.getElementById('comments').value;
-                }
-
+    
                 try {
-                    // Prepara os dados para salvar
-                    const recordData = {
-                        rdDate,
-                        unitId,
-                        unitName,
-                        shift,
-                        empresa,
-                        responsible,
-                        attended,
-                        absent,
-                        replacementCount,
-                        replacementHours,
-                        totalReplacementHours,
-                        appliedPercentage,
-                        totalHours: totalCalculatedHours,
-                        isSpecialDay,
-                        userId: currentUser.uid,
-                        userEmail: currentUser.email,
-                        comments,
-                        photo: imageBase64 || "",
-                        timestamp: new Date().toISOString()
-                    };
-
                     // Salva no Firebase
-                    const rdRecordsPath = `rdRecords/`; 
-                    const reference = ref(database, rdRecordsPath);
-                    const newRecordRef = push(reference);
-
-                    await set(newRecordRef, recordData);
-
-                    // Feedback para o usuário
+                    await set(push(ref(database, 'rdRecords/')), formData);
+                    
+                    // Feedback e reset
                     hideLoader();
                     alert("Dados de RD enviados com sucesso!");
-                    
-                    // Reseta o formulário
-                    document.getElementById('rdForm').reset();
-                    document.getElementById('imagePreview').style.display = 'none';
-                    document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
-                    document.getElementById('unit').value = "";
-                    document.getElementById('replacementCount').value = 0;
-                    document.getElementById('replacementHoursContainer').innerHTML = '';
-                    imageBase64 = null;
-                    calculateReplacement();
-                    updateInterfaceBasedOnUnit();
-                    
-                    // Desmarca todos os checkboxes
-                    document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]').forEach(checkbox => {
-                        checkbox.checked = false;
-                        const optionsDiv = checkbox.closest('.employee-checkbox-container').querySelector('.absence-options');
-                        optionsDiv.style.display = 'none';
-                    });
+                    resetForm();
                 } catch (error) {
                     hideLoader();
                     console.error("Erro ao salvar dados:", error);
-                    
-                    let errorMessage = "Ocorreu um erro ao enviar os dados. Por favor, tente novamente.";
-                    if (error.code === 'PERMISSION_DENIED') {
-                        errorMessage = "Permissão negada. Verifique se você está logado e seu email foi verificado.";
-                    }
-                    
-                    alert(errorMessage);
+                    alert(error.code === 'PERMISSION_DENIED' ? 
+                        "Permissão negada. Verifique se você está logado e seu email foi verificado." : 
+                        "Ocorreu um erro ao enviar os dados. Por favor, tente novamente.");
                 }
             });
             
-            // Calcula inicialmente
             calculateReplacement();
         });
-
+    
+        function resetForm() {
+            document.getElementById('rdForm').reset();
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+            document.getElementById('unit').value = "";
+            document.getElementById('functionAbsenceItems').innerHTML = '';
+            document.getElementById('replacementHoursContainer').innerHTML = '';
+            document.getElementById('employeeCheckboxes').innerHTML = '';
+            imageBase64 = null;
+            
+            // Reinicia os campos de função
+            addFunctionRow();
+            updateInterfaceBasedOnUnit();
+        }
+    
         // Monitora o estado de autenticação
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                console.log("Usuário logado:", user);
-                
-                // Verifica se o email foi verificado
-                if (!user.emailVerified) {
-                    const resend = confirm("Seu e-mail não foi verificado. Deseja reenviar o e-mail de verificação?");
-                    if (resend) {
-                        sendEmailVerification(user).then(() => {
-                            alert("E-mail de verificação reenviado. Por favor, verifique sua caixa de entrada.");
-                            window.location.href = 'index.html';
-                        }).catch(error => {
-                            console.error("Erro ao reenviar e-mail:", error);
-                            alert("Erro ao reenviar e-mail de verificação.");
-                        });
-                    }
-                }
-            } else {
-                console.log("Nenhum usuário logado");
-                window.location.href = 'index.html';
+            currentUser = user;
+            if (!user) return window.location.href = 'index.html';
+            
+            if (!user.emailVerified && confirm("Seu e-mail não foi verificado. Deseja reenviar o e-mail de verificação?")) {
+                sendEmailVerification(user).then(() => {
+                    alert("E-mail de verificação reenviado. Por favor, verifique sua caixa de entrada.");
+                }).catch(error => {
+                    console.error("Erro ao reenviar e-mail:", error);
+                    alert("Erro ao reenviar e-mail de verificação.");
+                });
             }
         });
     </script>

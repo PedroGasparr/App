@@ -9,16 +9,32 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --danger: #f72585;
-            --warning: #f8961e;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --light-gray: #e9ecef;
+            /* Cores principais */
+            --primary: #4361ee; /* Azul principal */
+            --primary-dark: #3a56d4; /* Azul mais escuro */
+            --secondary: #3f37c9; /* Azul arroxeado */
+            --success: #4cc9f0; /* Ciano/Verde água */
+            --danger: #f72585; /* Rosa */
+            --warning: #f8961e; /* Laranja */
+            --info: #4895ef; /* Azul claro */
+            --purple: #7209b7; /* Roxo */
+
+            /* Cores neutras */
+            --light: #f8f9fa; /* Cinza muito claro */
+            --dark: #212529; /* Preto quase total */
+            --gray: #6c757d; /* Cinza médio */
+            --light-gray: #e9ecef; /* Cinza claro para bordas */
+
+            /* Cores para temas de cards */
+            --theme-primary: #eef2ff; /* Fundo claro Primary */
+            --theme-secondary: #eef0ff; /* Fundo claro Secondary */
+            --theme-success: #e0f7fa; /* Fundo claro Success */
+            --theme-danger: #ffebee; /* Fundo claro Danger */
+            --theme-warning: #fff8e1; /* Fundo claro Warning */
+            --theme-info: #e3f2fd; /* Fundo claro Info */
+            --theme-purple: #f3e5f5; /* Fundo claro Purple */
+
+
             --border-radius: 8px;
             --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             --transition: all 0.3s ease;
@@ -125,19 +141,68 @@
             padding: 20px;
         }
 
-        .metric-card {
-            background: white;
+        /* Base Card Style */
+        .metric-card, .chart-card {
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
             padding: 20px;
             border: 1px solid var(--light-gray);
             transition: var(--transition);
+            display: flex; /* Use flexbox for layout */
+            flex-direction: column; /* Stack content vertically */
+            background-color: white; /* Default background */
         }
 
-        .metric-card:hover {
+         /* Metric Card Specifics */
+        .metric-card {
+             /* Limit height and add scroll for absent/function tables */
+            max-height: 350px; /* Slightly increased max height */
+            overflow-y: auto;
+        }
+
+
+         /* Hover effect for all cards */
+        .metric-card:hover, .chart-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
+
+        /* Card Themes */
+        .card-theme-primary {
+            background-color: var(--theme-primary);
+            border-color: var(--primary);
+        }
+         .card-theme-secondary {
+            background-color: var(--theme-secondary);
+            border-color: var(--secondary);
+        }
+         .card-theme-success {
+            background-color: var(--theme-success);
+            border-color: var(--success);
+        }
+         .card-theme-danger {
+            background-color: var(--theme-danger);
+            border-color: var(--danger);
+        }
+         .card-theme-warning {
+            background-color: var(--theme-warning);
+            border-color: var(--warning);
+        }
+         .card-theme-info {
+            background-color: var(--theme-info);
+            border-color: var(--info);
+        }
+        .card-theme-purple {
+            background-color: var(--theme-purple);
+            border-color: var(--purple);
+        }
+        /* Default theme if none specified */
+        .metric-card:not([class*="card-theme-"]),
+        .chart-card:not([class*="card-theme-"]) {
+            background-color: white;
+            border-color: var(--light-gray);
+        }
+
 
         .metric-title {
             font-size: 16px;
@@ -169,7 +234,37 @@
             color: var(--warning);
         }
 
-        /* Charts */
+        /* Table specific styles for "Pessoas com Mais Faltas" and "Faltas por Função" cards */
+        .metric-card .absent-table,
+        .metric-card .function-absent-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .metric-card .absent-table th,
+        .metric-card .absent-table td,
+        .metric-card .function-absent-table th,
+        .metric-card .function-absent-table td {
+            padding: 5px 0;
+            border-bottom: 1px solid var(--light-gray);
+            text-align: left;
+        }
+
+        .metric-card .absent-table th,
+        .metric-card .function-absent-table th {
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .metric-card .absent-table tr:last-child td,
+        .metric-card .function-absent-table tr:last-child td {
+            border-bottom: none;
+        }
+
+
+        /* Charts Container */
         .charts-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
@@ -177,12 +272,12 @@
             padding: 20px;
         }
 
+        /* Chart Card Specifics */
         .chart-card {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            padding: 20px;
-            border: 1px solid var(--light-gray);
+             /* Ensure chart container takes available space */
+             flex-grow: 1;
+             display: flex;
+             flex-direction: column;
         }
 
         .chart-title {
@@ -197,6 +292,8 @@
             position: relative;
             height: 300px;
             width: 100%;
+             /* Ensure chart container fills parent */
+             flex-grow: 1;
         }
 
         /* Tabela de resumo */
@@ -279,22 +376,36 @@
             .metrics-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .charts-container {
                 grid-template-columns: 1fr;
             }
-            
+
             .logout-button {
                 position: static;
                 margin-top: 15px;
                 display: block;
                 width: 100%;
             }
+             .chart-container {
+                height: 250px; /* Adjust height for smaller screens */
+            }
+             .metric-card {
+                 max-height: none; /* Remove max height on smaller screens */
+                 overflow-y: visible;
+             }
         }
 
         @media (max-width: 480px) {
             body {
                 padding: 10px;
+            }
+             .chart-container {
+                height: 200px; /* Further adjust height */
+            }
+             .summary-table th, .summary-table td {
+                padding: 8px 10px; /* Adjust padding */
+                font-size: 12px;
             }
         }
     </style>
@@ -310,6 +421,13 @@
             </div>
 
             <div class="filters">
+                 <div class="filter-group">
+                    <label for="companyFilter">Filtrar por Empresa:</label>
+                    <select id="companyFilter">
+                        <option value="">Todas Empresas</option>
+                        <!-- Empresas serão carregadas dinamicamente -->
+                    </select>
+                </div>
                 <div class="filter-group">
                     <label for="unitFilter">Filtrar por Unidade:</label>
                     <select id="unitFilter">
@@ -343,39 +461,40 @@
             </div>
 
             <div class="charts-container">
-                <div class="chart-card">
-                    <h3 class="chart-title">Faltas por Dia</h3>
-                    <div class="chart-container">
-                        <canvas id="absencesChart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-card">
-                    <h3 class="chart-title">Horas Perdidas vs Horas Repostas</h3>
-                    <div class="chart-container">
-                        <canvas id="hoursChart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-card">
-                    <h3 class="chart-title">Distribuição de Faltas por Turno</h3>
-                    <div class="chart-container">
-                        <canvas id="shiftChart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-card">
+                 <div class="chart-card card-theme-primary"> <!-- Added theme class -->
                     <h3 class="chart-title">Faltas por Unidade</h3>
                     <div class="chart-container">
                         <canvas id="unitChart"></canvas>
                     </div>
                 </div>
+                <div class="chart-card card-theme-danger"> <!-- Added theme class -->
+                    <h3 class="chart-title">Faltas por Dia</h3>
+                    <div class="chart-container">
+                        <canvas id="absencesChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card card-theme-success"> <!-- Added theme class -->
+                    <h3 class="chart-title">Horas Perdidas vs Horas Repostas</h3>
+                    <div class="chart-container">
+                        <canvas id="hoursChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card card-theme-purple"> <!-- Added theme class -->
+                    <h3 class="chart-title">Distribuição de Faltas por Turno</h3>
+                    <div class="chart-container">
+                        <canvas id="shiftChart"></canvas>
+                    </div>
+                </div>
             </div>
 
-            <div class="chart-card" style="margin: 20px;">
+            <div class="chart-card" style="margin: 20px;"> <!-- Summary table card - default style for now -->
                 <h3 class="chart-title">Resumo Detalhado por Dia</h3>
                 <div style="overflow-x: auto;">
                     <table class="summary-table" id="summaryTable">
                         <thead>
                             <tr>
                                 <th>Data</th>
+                                <th>Empresa</th>
                                 <th>Unidade</th>
                                 <th>Turno</th>
                                 <th>Presentes</th>
@@ -400,16 +519,18 @@
         <span class="indicator"></span>
         <span>Desconectado</span>
     </div>
+
     <script src="js.js"></script>
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-        import { 
-            getAuth, 
+        import {
+            getAuth,
             signOut,
             onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -418,6 +539,7 @@
 
         // DOM elements
         const appContainer = document.getElementById('appContainer');
+        const companyFilter = document.getElementById('companyFilter');
         const unitFilter = document.getElementById('unitFilter');
         const dateRangeStart = document.getElementById('dateRangeStart');
         const dateRangeEnd = document.getElementById('dateRangeEnd');
@@ -430,84 +552,110 @@
         // Charts
         let absencesChart, hoursChart, shiftChart, unitChart;
 
-        // Variáveis globais
-        let units = []; // Armazenará as unidades do banco de dados
+        // Global variables
+        let allRecordsData = null; // To store all records once loaded
+        let units = []; // To store unique units found in records
+        let companies = []; // To store unique companies found in records
+
 
         // Update connection status
         function updateConnectionStatus(status) {
             connectionStatus.className = `connection-status ${status}`;
-            connectionStatus.querySelector('span:last-child').textContent = 
-                status === 'connected' ? 'Conectado' : 
+            connectionStatus.querySelector('span:last-child').textContent =
+                status === 'connected' ? 'Conectado' :
                 status === 'waiting' ? 'Verificando...' : 'Desconectado';
         }
 
-        // Carrega as unidades do banco de dados
-        async function loadUnits() {
-            try {
-                const dbRef = ref(database);
-                const snapshot = await get(child(dbRef, 'units'));
-                
-                if (snapshot.exists()) {
-                    units = [];
-                    const unitsData = snapshot.val();
-                    
-                    for (const unitId in unitsData) {
-                        units.push({
-                            id: unitId,
-                            name: unitsData[unitId].name
-                        });
+        // Extract unique companies and units from records
+        function extractUniqueCompaniesAndUnits(records) {
+            const uniqueCompaniesSet = new Set();
+            const uniqueUnitsMap = new Map(); // Use Map to ensure uniqueness based on unitId
+
+            for (const key in records) {
+                const record = records[key];
+                if (record && typeof record === 'object') {
+                    // Extract unique companies
+                    if (record.empresa && typeof record.empresa === 'string') {
+                        uniqueCompaniesSet.add(record.empresa.trim()); // Add trimmed company name
                     }
-                    
-                    // Ordena as unidades por nome
-                    units.sort((a, b) => a.name.localeCompare(b.name));
-                    
-                    // Atualiza o dropdown de unidades
-                    updateUnitFilter();
-                } else {
-                    console.log("Nenhuma unidade encontrada no banco de dados");
+
+                     // Extract unique units
+                    if (record.unitId && record.unitName) {
+                         // Add unit if not already in the map by unitId
+                        if (!uniqueUnitsMap.has(record.unitId)) {
+                            uniqueUnitsMap.set(record.unitId, { id: record.unitId, name: record.unitName });
+                        }
+                    } else if (record.unitName) {
+                        // Fallback if unitId is missing, use unitName as ID (less reliable)
+                         if (!uniqueUnitsMap.has(record.unitName)) {
+                            uniqueUnitsMap.set(record.unitName, { id: record.unitName, name: record.unitName });
+                         }
+                    }
                 }
-            } catch (error) {
-                console.error("Erro ao carregar unidades:", error);
             }
+
+            // Convert Set to Array and sort companies
+            companies = Array.from(uniqueCompaniesSet).sort();
+            // Convert Map values to Array and sort units
+            units = Array.from(uniqueUnitsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+
+            // Update filter dropdowns
+            updateCompanyFilter();
+            updateUnitFilter();
         }
+
+         // Update the company filter dropdown with companies from data
+        function updateCompanyFilter() {
+            companyFilter.innerHTML = '<option value="">Todas Empresas</option>';
+            companies.forEach(company => {
+                const option = document.createElement('option');
+                option.value = company;
+                option.textContent = company;
+                companyFilter.appendChild(option);
+            });
+        }
+
 
         // Atualiza o filtro de unidades com os dados do banco
         function updateUnitFilter() {
             unitFilter.innerHTML = '<option value="">Todas Unidades</option>';
-            
             units.forEach(unit => {
                 const option = document.createElement('option');
-                option.value = unit.id;
+                option.value = unit.id; // Use unit.id as value
                 option.textContent = unit.name;
                 unitFilter.appendChild(option);
             });
         }
 
         function normalizeShift(shift) {
-            if (!shift) return '';
-            
-            // Converte para minúsculas e remove acentos
+             if (!shift) return '';
+
+            // Converte para minúsculas, remove acentos e espaços extras
             return shift.toString()
                 .toLowerCase()
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                 .trim();
         }
 
-        // Format date for display
+         // Format date for display
         function formatDisplayDate(dateTimeString) {
             try {
                 const date = new Date(dateTimeString);
-                return date.toLocaleDateString('pt-BR');
+                // Adjust for potential timezone issues if needed, but for simple display, localeString is often fine
+                return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }); // Assuming dates are stored in UTC
             } catch (e) {
-                console.error('Erro ao formatar data:', e);
+                console.error('Erro ao formatar data para exibição:', e);
                 return dateTimeString || 'Data não informada';
             }
         }
 
+
         // Format date for comparison (YYYY-MM-DD)
         function formatDateForComparison(dateTimeString) {
-            try {
+             try {
                 const date = new Date(dateTimeString);
+                 // Ensure date comparison is based on the date part only, ignoring time and timezone
                 return date.toISOString().split('T')[0];
             } catch (e) {
                 console.error('Erro ao formatar data para comparação:', e);
@@ -517,14 +665,36 @@
 
         // Check if date is within range
         function isDateInRange(dateString, startDate, endDate) {
-            if (!dateString) return false;
-            
-            const date = new Date(dateString);
+            if (!dateString || !startDate || !endDate) return true; // If no dates are set, include all
+
+            const recordDate = formatDateForComparison(dateString);
+
+            // Convert filter dates to Date objects for comparison
             const start = new Date(startDate);
             const end = new Date(endDate);
-            
-            return date >= start && date <= end;
+            const record = new Date(recordDate);
+
+            // Set times to midnight for date-only comparison
+            start.setHours(0, 0, 0, 0);
+            end.setHours(0, 0, 0, 0);
+            record.setHours(0, 0, 0, 0);
+
+            return record >= start && record <= end;
         }
+
+        // Check if time is within Night shift range (22:00 to 06:00)
+        function isNightShiftTime(dateTimeString) {
+             try {
+                const date = new Date(dateTimeString);
+                const hours = date.getHours();
+                // Night shift is 22:00 (inclusive) to 05:59 (inclusive)
+                return hours >= 22 || hours < 6;
+             } catch (e) {
+                console.error('Erro ao verificar horário do turno da noite:', e);
+                return false; // Default to false if time cannot be determined
+             }
+        }
+
 
         // Calculate effective absentees
         function calculateEffectiveAbsent(record) {
@@ -536,10 +706,10 @@
         // Calculate hours metrics
         function calculateHoursMetrics(record) {
             const absent = parseInt(record.absent) || 0;
-            const horasPerdidas = absent * 8;
-            const horasRepostas = record.totalHours || 0;
+            const horasPerdidas = absent * 8; // Assuming 8 hours per absence
+            const horasRepostas = record.totalReplacementHours || 0; // Use totalReplacementHours
             const resultadoHoras = horasPerdidas - horasRepostas;
-            
+
             return {
                 horasPerdidas,
                 horasRepostas,
@@ -548,103 +718,148 @@
         }
 
         function processRecordsForDashboard(data, filters) {
-    if (!data) return { records: [], peopleWithCertificate: {}, peopleWithoutCertificate: {} };
-    
-    const { unit, startDate, endDate, shift } = filters;
-    const peopleWithCertificate = {};
-    const peopleWithoutCertificate = {};
-    
-    const filteredRecords = Object.entries(data)
-        .filter(([key, value]) => value && typeof value === 'object')
-        .map(([key, record]) => ({ key, ...record }))
-        .filter(record => {
-            // Filter by unit if specified
-            const unitMatch = !unit || 
-                (record.unitId === unit);
-            
-            // Filter by date range if specified
-            const recordDate = formatDateForComparison(record.rdDate);
-            const dateMatch = !startDate || !endDate || 
-                (recordDate >= startDate && recordDate <= endDate);
-            
-            // Filter by shift if specified
-            let shiftMatch = true;
-            if (shift) {
-                const recordShift = String(record.shift || '').toLowerCase().trim();
-                const selectedShift = String(shift).toLowerCase().trim();
-                
-                shiftMatch = recordShift.includes(selectedShift) || 
-                            selectedShift.includes(recordShift) ||
-                            (selectedShift === 'manha' && recordShift.includes('manh')) ||
-                            (selectedShift === 'tarde' && recordShift.includes('tard')) ||
-                            (selectedShift === 'noite' && recordShift.includes('noit'));
-            }
-            
-            // Extrair pessoas com e sem atestado dos comentários - APENAS SE PASSAR NOS FILTROS
-            if (unitMatch && dateMatch && shiftMatch && record.comments) {
-                const comments = record.comments.split(',');
-                comments.forEach(comment => {
-                    const isCertificate = comment.includes('(atestado)') || 
-                                         comment.includes('(atestado médico)');
-                    const isAbsence = comment.includes('(falta)');
-                    
-                    if (isCertificate || isAbsence) {
-                        const name = comment.split('(')[0].trim();
-                        if (isCertificate) {
-                            peopleWithCertificate[name] = (peopleWithCertificate[name] || 0) + 1;
-                        } else if (isAbsence) {
-                            peopleWithoutCertificate[name] = (peopleWithoutCertificate[name] || 0) + 1;
+            if (!data) return { records: [], peopleWithCertificate: {}, peopleWithoutCertificate: {}, functionAbsences: {} };
+
+            const { company, unit, startDate, endDate, shift } = filters;
+            const peopleWithCertificate = {};
+            const peopleWithoutCertificate = {};
+            const functionAbsences = {}; // To store absences by function type
+
+            const filteredRecords = Object.entries(data)
+                .filter(([key, value]) => value && typeof value === 'object')
+                .map(([key, record]) => ({ key, ...record }))
+                .filter(record => {
+                    // Filter by company if specified (case-insensitive comparison for safety)
+                    const companyMatch = !company ||
+                        (record.empresa && record.empresa.toLowerCase() === company.toLowerCase());
+
+
+                    // Filter by unit if specified (match by unitId)
+                    const unitMatch = !unit ||
+                        (record.unitId === unit);
+
+                    // Filter by date range if specified
+                    const dateMatch = isDateInRange(record.rdDate, startDate, endDate);
+
+                    // Filter by shift if specified
+                    let shiftMatch = true;
+                    if (shift) {
+                         const normalizedRecordShift = normalizeShift(record.shift);
+                         const normalizedSelectedShift = normalizeShift(shift);
+
+                         // Check if the normalized selected shift is included in the normalized record shift
+                         // This allows for partial matches like "manha" matching "turno da manha"
+                         shiftMatch = normalizedRecordShift.includes(normalizedSelectedShift);
+                    }
+
+                    // Extract people with and without certificate from comments - ONLY IF RECORDS PASS FILTERS
+                    if (companyMatch && unitMatch && dateMatch && shiftMatch && record.comments) {
+                        // Split comments by comma and potentially other separators like newline
+                        const commentsArray = record.comments.split(/[\n,;]+/).map(c => c.trim()).filter(c => c);
+
+                        commentsArray.forEach(comment => {
+                            const isCertificate = comment.toLowerCase().includes('(atestado)') ||
+                                                 comment.toLowerCase().includes('(atestado médico)');
+                            const isAbsence = comment.toLowerCase().includes('(falta)');
+
+                            if (isCertificate || isAbsence) {
+                                // Extract name before the first parenthesis
+                                const nameMatch = comment.match(/^([^()]+)/);
+                                if (nameMatch && nameMatch[1]) {
+                                    const name = nameMatch[1].trim();
+                                    if (name) { // Ensure name is not empty
+                                        if (isCertificate) {
+                                            peopleWithCertificate[name] = (peopleWithCertificate[name] || 0) + 1;
+                                        } else if (isAbsence) {
+                                            peopleWithoutCertificate[name] = (peopleWithoutCertificate[name] || 0) + 1;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                     // Aggregate function absences for records that pass all filters
+                    if (companyMatch && unitMatch && dateMatch && shiftMatch && record.functionAbsences) {
+                         // Iterate through the function types directly under functionAbsences
+                        for (const funcType in record.functionAbsences) {
+                             // Ensure funcType is a direct property and not 'details' or similar
+                            if (record.functionAbsences.hasOwnProperty(funcType) && funcType !== 'details') {
+                                functionAbsences[funcType] = (functionAbsences[funcType] || 0) + (record.functionAbsences[funcType] || 0);
+                             }
                         }
                     }
-                });
-            }
-            
-            return unitMatch && dateMatch && shiftMatch;
-        })
-        .sort((a, b) => new Date(a.rdDate) - new Date(b.rdDate));
-    
-    return {
-        records: filteredRecords,
-        peopleWithCertificate,
-        peopleWithoutCertificate
-    };
-}
+
+
+                    return companyMatch && unitMatch && dateMatch && shiftMatch;
+                })
+                .sort((a, b) => new Date(a.rdDate) - new Date(b.rdDate)); // Sort by date
+
+            return {
+                records: filteredRecords,
+                peopleWithCertificate,
+                peopleWithoutCertificate,
+                functionAbsences // Include function absences in the result
+            };
+        }
+
 
         // Calculate summary metrics
         function calculateSummaryMetrics(result) {
             const filteredRecords = result.records;
             const peopleWithCertificate = result.peopleWithCertificate;
             const peopleWithoutCertificate = result.peopleWithoutCertificate;
-            
+            const functionAbsences = result.functionAbsences;
+
             let totalFaltas = 0;
             let totalFaltasEfetivas = 0;
             let totalHorasPerdidas = 0;
             let totalHorasRepostas = 0;
             let totalResultadoHoras = 0;
-            
+
+            let totalNightFaltas = 0;
+            let totalNightHorasPerdidas = 0;
+            let totalDayFaltas = 0;
+            let totalDayHorasPerdidas = 0;
+
+
             const faltasPorDia = {};
             const horasPorDia = {};
             const faltasPorTurno = {};
             const faltasPorUnidade = {};
-            
+
             filteredRecords.forEach(record => {
-                const date = formatDisplayDate(record.rdDate);
+                const date = formatDisplayDate(record.rdDate); // Use formatted date for display
+                const absentCount = parseInt(record.absent) || 0;
                 const effectiveAbsent = calculateEffectiveAbsent(record);
                 const { horasPerdidas, horasRepostas, resultadoHoras } = calculateHoursMetrics(record);
-                
+
                 // Totais gerais
-                totalFaltas += parseInt(record.absent) || 0;
+                totalFaltas += absentCount;
                 totalFaltasEfetivas += effectiveAbsent;
                 totalHorasPerdidas += horasPerdidas;
                 totalHorasRepostas += horasRepostas;
                 totalResultadoHoras += resultadoHoras;
-                
+
+                // Faltas e Horas por Período (Dia vs Noite)
+                // Check if the record's time falls within the night shift definition (22:00 to 06:00)
+                if (isNightShiftTime(record.rdDate)) {
+                    totalNightFaltas += absentCount;
+                     // Assuming 8 hours per absence in night shift based on your previous calculation
+                    totalNightHorasPerdidas += absentCount * 8;
+                } else {
+                    totalDayFaltas += absentCount;
+                    // Assuming 8 hours per absence in day shift based on your previous calculation
+                    totalDayHorasPerdidas += absentCount * 8;
+                }
+
+
                 // Faltas por dia
                 if (!faltasPorDia[date]) {
                     faltasPorDia[date] = 0;
                 }
-                faltasPorDia[date] += parseInt(record.absent) || 0;
-                
+                faltasPorDia[date] += absentCount;
+
                 // Horas por dia
                 if (!horasPorDia[date]) {
                     horasPorDia[date] = {
@@ -654,44 +869,70 @@
                 }
                 horasPorDia[date].perdidas += horasPerdidas;
                 horasPorDia[date].repostas += horasRepostas;
-                
+
                 // Faltas por turno
                 const turno = record.shift ? capitalizeFirstLetter(record.shift) : 'Não informado';
                 if (!faltasPorTurno[turno]) {
                     faltasPorTurno[turno] = 0;
                 }
-                faltasPorTurno[turno] += parseInt(record.absent) || 0;
-                
+                faltasPorTurno[turno] += absentCount;
+
                 // Faltas por unidade
-                const unidade = units.find(u => u.id === record.unitId)?.name || record.unit || 'Não informado';
+                const unidade = units.find(u => u.id === record.unitId)?.name || record.unitName || 'Não informado'; // Use unitName if unitId not found
                 if (!faltasPorUnidade[unidade]) {
                     faltasPorUnidade[unidade] = 0;
                 }
-                faltasPorUnidade[unidade] += parseInt(record.absent) || 0;
+                faltasPorUnidade[unidade] += absentCount;
             });
-            
+
             // Ordenar pessoas com atestado por frequência
             const topAbsentWithCertificate = Object.entries(peopleWithCertificate)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5); // Pegar as top 5
-            
+                .sort((a, b) => b[1] - a[1]); // Get all, slice in render
+
             // Ordenar pessoas sem atestado por frequência
             const topAbsentWithoutCertificate = Object.entries(peopleWithoutCertificate)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5); // Pegar as top 5
-            
+                .sort((a, b) => b[1] - a[1]); // Get all, slice in render
+
+            // Convert function absences object to array for table rendering
+             const functionAbsencesArray = Object.entries(functionAbsences)
+                 .map(([func, count]) => ({ function: capitalizeFirstLetter(func), count }))
+                 .sort((a, b) => b.count - a.count); // Sort by count
+
+
+             // Sort dates for charts
+            const sortedDates = Object.keys(faltasPorDia).sort((a, b) => {
+                 const [dayA, monthA, yearA] = a.split('/').map(Number);
+                 const [dayB, monthB, yearB] = b.split('/').map(Number);
+                 const dateA = new Date(yearA, monthA - 1, dayA);
+                 const dateB = new Date(yearB, monthB - 1, dayB);
+                 return dateA - dateB;
+            });
+
+            const sortedFaltasPorDia = {};
+            const sortedHorasPorDia = {};
+            sortedDates.forEach(date => {
+                sortedFaltasPorDia[date] = faltasPorDia[date];
+                sortedHorasPorDia[date] = horasPorDia[date];
+            });
+
+
             return {
                 totalFaltas,
                 totalFaltasEfetivas,
                 totalHorasPerdidas,
                 totalHorasRepostas,
                 totalResultadoHoras,
-                faltasPorDia,
-                horasPorDia,
+                totalNightFaltas,
+                totalNightHorasPerdidas,
+                totalDayFaltas,
+                totalDayHorasPerdidas,
+                faltasPorDia: sortedFaltasPorDia, // Use sorted data for charts
+                horasPorDia: sortedHorasPorDia,   // Use sorted data for charts
                 faltasPorTurno,
                 faltasPorUnidade,
                 topAbsentWithCertificate,
-                topAbsentWithoutCertificate
+                topAbsentWithoutCertificate,
+                functionAbsences: functionAbsencesArray // Pass as sorted array
             };
         }
 
@@ -700,79 +941,107 @@
             return string ? string.charAt(0).toUpperCase() + string.slice(1).toLowerCase() : '';
         }
 
+         // Render absent people table
+        function renderAbsentPeopleTable(peopleList) {
+            if (peopleList.length === 0) {
+                return '<p>Nenhum registro encontrado.</p>';
+            }
+            let tableHtml = '<table class="absent-table"><thead><tr><th>Nome</th><th>Faltas</th></tr></thead><tbody>';
+            peopleList.forEach(([name, count]) => {
+                tableHtml += `<tr><td>${name}</td><td>${count}</td></tr>`;
+            });
+            tableHtml += '</tbody></table>';
+            return tableHtml;
+        }
+
+        // Render function absences table
+        function renderFunctionAbsencesTable(functionList) {
+             if (functionList.length === 0) {
+                return '<p>Nenhum registro encontrado.</p>';
+            }
+            let tableHtml = '<table class="function-absent-table"><thead><tr><th>Função</th><th>Faltas</th></tr></thead><tbody>';
+            functionList.forEach(item => {
+                tableHtml += `<tr><td>${item.function}</td><td>${item.count}</td></tr>`;
+            });
+            tableHtml += '</tbody></table>';
+            return tableHtml;
+        }
+
+
         // Update metrics cards
         function updateMetricsCards(metrics) {
             metricsGrid.innerHTML = `
-                <div class="metric-card">
+                <div class="metric-card card-theme-primary"> <!-- Added theme class -->
                     <div class="metric-title">Total de Faltas</div>
                     <div class="metric-value">${metrics.totalFaltas}</div>
                     <div class="metric-detail">Número total de faltas no período</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-card card-theme-danger"> <!-- Added theme class -->
                     <div class="metric-title">Faltas Efetivas</div>
                     <div class="metric-value ${metrics.totalFaltasEfetivas > 0 ? 'metric-negative' : 'metric-positive'}">
                         ${metrics.totalFaltasEfetivas}
                     </div>
                     <div class="metric-detail">Faltas não cobertas por reposição</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-card card-theme-danger"> <!-- Added theme class -->
                     <div class="metric-title">Horas Perdidas</div>
                     <div class="metric-value metric-negative">${metrics.totalHorasPerdidas}h</div>
                     <div class="metric-detail">Total de horas perdidas por faltas</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-card card-theme-success"> <!-- Added theme class -->
                     <div class="metric-title">Horas Repostas</div>
                     <div class="metric-value metric-positive">${metrics.totalHorasRepostas}h</div>
                     <div class="metric-detail">Total de horas repostas pela equipe</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-card card-theme-info"> <!-- Added theme class -->
                     <div class="metric-title">Resultado de Horas</div>
                     <div class="metric-value ${metrics.totalResultadoHoras > 0 ? 'metric-negative' : 'metric-positive'}">
                         ${metrics.totalResultadoHoras}h
                     </div>
                     <div class="metric-detail">Horas perdidas - horas repostas</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-card card-theme-warning"> <!-- Added theme class -->
                     <div class="metric-title">Média Diária de Faltas</div>
                     <div class="metric-value ${(metrics.totalFaltas / Object.keys(metrics.faltasPorDia).length) > 3 ? 'metric-negative' : 'metric-positive'}">
-                        ${Object.keys(metrics.faltasPorDia).length > 0 ? 
+                        ${Object.keys(metrics.faltasPorDia).length > 0 ?
                             (metrics.totalFaltas / Object.keys(metrics.faltasPorDia).length).toFixed(1) : 0}
                     </div>
                     <div class="metric-detail">Média de faltas por dia útil</div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-title">Pessoas com Mais Faltas (com atestado)</div>
-                    <div class="metric-value ${metrics.topAbsentWithCertificate.length > 0 ? 'metric-negative' : 'metric-positive'}" id="topAbsentWithCertificate">
-                        ${metrics.topAbsentWithCertificate.reduce((sum, [name, count]) => sum + count, 0)}
-                    </div>
-                    <div class="metric-detail" id="topAbsentWithCertificateNames">
-                        ${metrics.topAbsentWithCertificate.length > 0 ? 
-                            metrics.topAbsentWithCertificate.map(([name, count]) => `${name} (${count}x)`).join(', ') : 
-                            'Nenhum registro com atestado'}
-                    </div>
+                 <div class="metric-card card-theme-primary"> <!-- Added theme class -->
+                    <div class="metric-title">Faltas e Horas (Dia)</div>
+                    <div class="metric-value">${metrics.totalDayFaltas} faltas</div>
+                    <div class="metric-detail">${metrics.totalDayHorasPerdidas}h perdidas entre 06:01 e 21:59</div>
                 </div>
-                <div class="metric-card">
+                 <div class="metric-card card-theme-secondary"> <!-- Added theme class -->
+                    <div class="metric-title">Faltas e Horas (Noite)</div>
+                    <div class="metric-value">${metrics.totalNightFaltas} faltas</div>
+                    <div class="metric-detail">${metrics.totalNightHorasPerdidas}h perdidas entre 22:00 e 06:00</div>
+                </div>
+                <div class="metric-card card-theme-info"> <!-- Added theme class -->
+                    <div class="metric-title">Pessoas com Mais Faltas (com atestado)</div>
+                    ${renderAbsentPeopleTable(metrics.topAbsentWithCertificate)}
+                </div>
+                <div class="metric-card card-theme-warning"> <!-- Added theme class -->
                     <div class="metric-title">Pessoas com Mais Faltas (sem atestado)</div>
-                    <div class="metric-value ${metrics.topAbsentWithoutCertificate.length > 0 ? 'metric-negative' : 'metric-positive'}" id="topAbsentWithoutCertificate">
-                        ${metrics.topAbsentWithoutCertificate.reduce((sum, [name, count]) => sum + count, 0)}
-                    </div>
-                    <div class="metric-detail" id="topAbsentWithoutCertificateNames">
-                        ${metrics.topAbsentWithoutCertificate.length > 0 ? 
-                            metrics.topAbsentWithoutCertificate.map(([name, count]) => `${name} (${count}x)`).join(', ') : 
-                            'Nenhum registro sem atestado'}
-                    </div>
+                    ${renderAbsentPeopleTable(metrics.topAbsentWithoutCertificate)}
+                </div>
+                 <div class="metric-card card-theme-purple"> <!-- Added theme class -->
+                    <div class="metric-title">Faltas por Função</div>
+                    ${renderFunctionAbsencesTable(metrics.functionAbsences)}
                 </div>
             `;
         }
 
+
         // Update charts
         function updateCharts(metrics) {
             // Faltas por Dia
-            const dates = Object.keys(metrics.faltasPorDia);
+            const dates = Object.keys(metrics.faltasPorDia); // Already sorted
             const absencesData = dates.map(date => metrics.faltasPorDia[date]);
-            
+
             if (absencesChart) absencesChart.destroy();
-            
+
             const absencesCtx = document.getElementById('absencesChart').getContext('2d');
             absencesChart = new Chart(absencesCtx, {
                 type: 'bar',
@@ -781,7 +1050,7 @@
                     datasets: [{
                         label: 'Faltas',
                         data: absencesData,
-                        backgroundColor: '#f72585',
+                        backgroundColor: '#f72585', /* Using danger color */
                         borderColor: '#f72585',
                         borderWidth: 1
                     }]
@@ -815,13 +1084,13 @@
                     }
                 }
             });
-            
+
             // Horas Perdidas vs Horas Repostas
             const horasPerdidasData = dates.map(date => metrics.horasPorDia[date]?.perdidas || 0);
             const horasRepostasData = dates.map(date => metrics.horasPorDia[date]?.repostas || 0);
-            
+
             if (hoursChart) hoursChart.destroy();
-            
+
             const hoursCtx = document.getElementById('hoursChart').getContext('2d');
             hoursChart = new Chart(hoursCtx, {
                 type: 'line',
@@ -831,7 +1100,7 @@
                         {
                             label: 'Horas Perdidas',
                             data: horasPerdidasData,
-                            backgroundColor: 'rgba(247, 37, 133, 0.2)',
+                            backgroundColor: 'rgba(247, 37, 133, 0.2)', /* Using danger color with opacity */
                             borderColor: 'rgba(247, 37, 133, 1)',
                             borderWidth: 2,
                             tension: 0.1,
@@ -840,7 +1109,7 @@
                         {
                             label: 'Horas Repostas',
                             data: horasRepostasData,
-                            backgroundColor: 'rgba(76, 201, 240, 0.2)',
+                            backgroundColor: 'rgba(76, 201, 240, 0.2)', /* Using success color with opacity */
                             borderColor: 'rgba(76, 201, 240, 1)',
                             borderWidth: 2,
                             tension: 0.1,
@@ -877,13 +1146,13 @@
                     }
                 }
             });
-            
+
             // Faltas por Turno
             const turnos = Object.keys(metrics.faltasPorTurno);
             const turnosData = turnos.map(turno => metrics.faltasPorTurno[turno]);
-            
+
             if (shiftChart) shiftChart.destroy();
-            
+
             const shiftCtx = document.getElementById('shiftChart').getContext('2d');
             shiftChart = new Chart(shiftCtx, {
                 type: 'doughnut',
@@ -892,12 +1161,12 @@
                     datasets: [{
                         data: turnosData,
                         backgroundColor: [
-                            '#4361ee',
-                            '#3f37c9',
-                            '#7209b7',
-                            '#f72585',
-                            '#4cc9f0',
-                            '#4895ef'
+                            '#4361ee', /* Primary */
+                            '#3f37c9', /* Secondary */
+                            '#7209b7', /* Purple */
+                            '#f72585', /* Danger */
+                            '#4cc9f0', /* Success */
+                            '#4895ef'  /* Light Blue */
                         ],
                         borderWidth: 1
                     }]
@@ -914,7 +1183,7 @@
                                 label: function(context) {
                                     const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
                                     const value = context.raw;
-                                    const percentage = Math.round((value / total) * 100);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
                                     return `${context.label}: ${value} (${percentage}%)`;
                                 }
                             }
@@ -922,28 +1191,48 @@
                     }
                 }
             });
-            
-            // Faltas por Unidade
+
+             // Faltas por Unidade
             const unidades = Object.keys(metrics.faltasPorUnidade);
             const unidadesData = unidades.map(unidade => metrics.faltasPorUnidade[unidade]);
-            
+
             if (unitChart) unitChart.destroy();
-            
+
             const unitCtx = document.getElementById('unitChart').getContext('2d');
             unitChart = new Chart(unitCtx, {
                 type: 'bar',
                 data: {
                     labels: unidades,
                     datasets: [{
-                        label: 'Faltas',
+                        label: 'Faltas por Unidade',
                         data: unidadesData,
                         backgroundColor: [
-                            '#4361ee',
+                            '#4361ee', /* Primary */
+                            '#3f37c9', /* Secondary */
+                            '#7209b7', /* Purple */
+                            '#f72585', /* Danger */
+                            '#4cc9f0', /* Success */
+                            '#4895ef', /* Info */
+                            '#023e8a', /* Dark Blue */
+                            '#0077b6', /* Medium Blue */
+                            '#0096c7', /* Cyan Blue */
+                            '#00b4d8', /* Light Cyan */
+                            '#48cae4', /* Lighter Cyan */
+                            '#90e0ef'  /* Pale Cyan */
+                        ],
+                        borderColor: [
+                             '#4361ee',
                             '#3f37c9',
                             '#7209b7',
                             '#f72585',
                             '#4cc9f0',
-                            '#4895ef'
+                            '#4895ef',
+                            '#023e8a',
+                            '#0077b6',
+                            '#0096c7',
+                            '#00b4d8',
+                            '#48cae4',
+                            '#90e0ef'
                         ],
                         borderWidth: 1
                     }]
@@ -966,11 +1255,14 @@
                             }
                         }
                     },
-                    plugins: {
+                     plugins: {
+                        legend: {
+                           display: false // Hide legend if there's only one dataset
+                        },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `Faltas: ${context.raw}`;
+                                    return `${context.dataset.label}: ${context.raw}`;
                                 }
                             }
                         }
@@ -982,24 +1274,26 @@
         // Update summary table
         function updateSummaryTable(filteredRecords) {
             summaryTableBody.innerHTML = '';
-            
+
             if (filteredRecords.length === 0) {
                 summaryTableBody.innerHTML = `
                     <tr>
-                        <td colspan="9" style="text-align: center;">Nenhum registro encontrado para os filtros selecionados</td>
+                        <td colspan="10" style="text-align: center;">Nenhum registro encontrado para os filtros selecionados</td>
                     </tr>
                 `;
                 return;
             }
-            
+
             filteredRecords.forEach(record => {
                 const effectiveAbsent = calculateEffectiveAbsent(record);
                 const { horasPerdidas, horasRepostas, resultadoHoras } = calculateHoursMetrics(record);
-                const unitName = units.find(u => u.id === record.unitId)?.name || record.unit || 'Não informado';
-                
+                const unitName = units.find(u => u.id === record.unitId)?.name || record.unitName || 'Não informado'; // Use unitName if unitId not found
+                 const companyName = record.empresa|| 'Não informado';
+
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${formatDisplayDate(record.rdDate)}</td>
+                    <td>${companyName}</td>
                     <td>${unitName}</td>
                     <td>${record.shift ? capitalizeFirstLetter(record.shift) : 'Não informado'}</td>
                     <td>${record.attended || 0}</td>
@@ -1015,42 +1309,80 @@
 
         // Load and process data
         function loadDashboardData() {
+            const company = companyFilter.value; // Get selected company
             const unit = unitFilter.value;
             const startDate = dateRangeStart.value;
             const endDate = dateRangeEnd.value;
             const shift = shiftFilter.value;
-            
+
             metricsGrid.innerHTML = '<div class="loading">Carregando dados...</div>';
-            
-            const recordsRef = ref(database, 'rdRecords');
-            
-            onValue(recordsRef, (snapshot) => {
-                const data = snapshot.val();
-                if (!data) {
-                    metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
+
+            // Use the already loaded data if available, otherwise fetch
+            if (!allRecordsData) {
+                 const recordsRef = ref(database, 'rdRecords');
+                 onValue(recordsRef, (snapshot) => {
+                    allRecordsData = snapshot.val(); // Store all data
+
+                    if (!allRecordsData) {
+                        metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
+                        updateConnectionStatus('disconnected');
+                        clearDashboardContent();
+                        return;
+                    }
+
+                    // Extract unique companies and units after initial load
+                    extractUniqueCompaniesAndUnits(allRecordsData);
+
+
+                    // Now process and display based on filters
+                    processAndDisplayData(allRecordsData, { company, unit, startDate, endDate, shift });
+                    updateConnectionStatus('connected');
+
+                }, (error) => {
+                    console.error('Erro ao carregar dados:', error);
+                    metricsGrid.innerHTML = '<div class="no-records" style="color: #ea4335;">Erro ao carregar dados. Verifique sua conexão.</div>';
                     updateConnectionStatus('disconnected');
-                    return;
-                }
-                
-                const result = processRecordsForDashboard(data, {
-                    unit,
-                    startDate,
-                    endDate,
-                    shift
+                    clearDashboardContent();
                 });
-                
-                const metrics = calculateSummaryMetrics(result);
-                
-                updateMetricsCards(metrics);
-                updateCharts(metrics);
-                updateSummaryTable(result.records);
-                updateConnectionStatus('connected');
-            }, (error) => {
-                console.error('Erro ao carregar dados:', error);
-                metricsGrid.innerHTML = '<div class="no-records" style="color: #ea4335;">Erro ao carregar dados. Verifique sua conexão.</div>';
-                updateConnectionStatus('disconnected');
-            });
+            } else {
+                // Data is already loaded, just process with current filters
+                processAndDisplayData(allRecordsData, { company, unit, startDate, endDate, shift });
+                 updateConnectionStatus('connected'); // Assume connected if data is loaded
+            }
         }
+
+        function processAndDisplayData(data, filters) {
+             const result = processRecordsForDashboard(data, filters);
+
+             if (result.records.length === 0) {
+                 metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado para os filtros selecionados</div>';
+                 clearDashboardContent();
+                 return;
+             }
+
+             const metrics = calculateSummaryMetrics(result);
+
+             updateMetricsCards(metrics);
+             updateCharts(metrics);
+             updateSummaryTable(result.records);
+        }
+
+         function clearDashboardContent() {
+             // Clear metrics
+             metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>'; // Display message
+             // Clear charts
+             if (absencesChart) absencesChart.destroy();
+             if (hoursChart) hoursChart.destroy();
+             if (shiftChart) shiftChart.destroy();
+             if (unitChart) unitChart.destroy();
+             // Clear table
+             summaryTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" style="text-align: center;">Nenhum registro encontrado</td>
+                    </tr>
+                `;
+         }
+
 
         // Initialize filters with default dates
         function initFilters() {
@@ -1058,14 +1390,24 @@
             const today = new Date();
             const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
             const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            
-            dateRangeStart.valueAsDate = firstDay;
-            dateRangeEnd.valueAsDate = lastDay;
-            
+
+            // Format dates as YYYY-MM-DD for input type="date"
+            const formatDatePickerDate = (date) => {
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            dateRangeStart.value = formatDatePickerDate(firstDay);
+            dateRangeEnd.value = formatDatePickerDate(lastDay);
+
             // Add event listeners to filters
-            [unitFilter, dateRangeStart, dateRangeEnd, shiftFilter].forEach(filter => {
+            [companyFilter, unitFilter, dateRangeStart, dateRangeEnd, shiftFilter].forEach(filter => {
                 filter.addEventListener('change', loadDashboardData);
             });
+
+             // Note: Company filter is now populated after data load in extractUniqueCompaniesAndUnits
         }
 
         // Handle logout
@@ -1079,9 +1421,8 @@
 
         // Initialize app
         async function initApp() {
-            await loadUnits(); // Carrega as unidades primeiro
-            initFilters();
-            loadDashboardData();
+            // Data will be loaded by loadDashboardData on auth state change
+             initFilters(); // Initialize filters first
         }
 
         // Event listeners
@@ -1091,7 +1432,8 @@
         onAuthStateChanged(auth, (user) => {
             if (user && user.emailVerified) {
                 // User is signed in and email is verified
-                initApp();
+                initApp(); // Initialize filters and then load data
+                loadDashboardData(); // Load data after filters are initialized
                 updateConnectionStatus('connected');
             } else {
                 // User is not signed in or email is not verified
