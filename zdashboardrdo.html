@@ -502,6 +502,7 @@
                                 <th>Faltas Efetivas</th>
                                 <th>Horas Perdidas</th>
                                 <th>Horas Repostas</th>
+                                <th>Horas Abonadas</th>
                                 <th>Resultado Horas</th>
                             </tr>
                         </thead>
@@ -554,6 +555,7 @@
 
         // Global variables
         let allRecordsData = null; // To store all records once loaded
+        let allAbonoData = null; // To store all abono records
         let units = []; // To store unique units found in records
         let companies = []; // To store unique companies found in records
 
@@ -695,35 +697,73 @@
              }
         }
 
+        // Load abono data from Firebase
+        async function loadAbonoData() {
+            try {
+                const abonoRef = ref(database, 'abonoRecords');
+                const snapshot = await get(abonoRef);
+                allAbonoData = snapshot.val() || {};
+                return allAbonoData;
+            } catch (error) {
+                console.error('Erro ao carregar dados de abono:', error);
+                return {};
+            }
+        }
 
-        // Calculate effective absentees
-        function calculateEffectiveAbsent(record) {
+        // Get abonos for a specific employee and date range
+        function getAbonosForEmployee(employeeId, startDate, endDate) {
+        if (!allAbonoData) return 0;
+        
+        return Object.values(allAbonoData).reduce((total, abono) => {
+            if (abono.employeeId === employeeId && 
+                isDateInRange(abono.date, startDate, endDate)) {
+                return total + (parseInt(abono.totalHours) || 0);
+            }
+            return total;
+        }, 0);
+    }
+
+        // Calculate effective absentees considering abonos
+        function calculateEffectiveAbsent(record, abonoHours = 0) {
             const absent = parseInt(record.absent) || 0;
             const replacementCount = parseInt(record.replacementCount) || 0;
-            return Math.max(0, absent - replacementCount);
+            const abonoCount = abonoHours / 8; // Converte horas abonadas para dias
+            
+            // First subtract replacements, then abonos
+            const effectiveAbsent = Math.max(0, absent - replacementCount - abonoCount);
+            
+            return Math.round(effectiveAbsent); // Round to nearest integer
         }
 
-        // Calculate hours metrics
-        function calculateHoursMetrics(record) {
-            const absent = parseInt(record.absent) || 0;
-            const horasPerdidas = absent * 8; // Assuming 8 hours per absence
-            const horasRepostas = record.totalReplacementHours || 0; // Use totalReplacementHours
-            const resultadoHoras = horasPerdidas - horasRepostas;
+        // Calculate hours metrics considering abonos
+        function calculateHoursMetrics(record, abonoHours = 0) {
+        const absent = parseInt(record.absent) || 0;
+        const horasPerdidas = absent * 8;
+        const horasRepostas = parseInt(record.totalReplacementHours) || 0; // Garanta que é número
+        const horasAbonadas = parseInt(abonoHours) || 0; // Garanta que é número
+        const resultadoHoras = horasPerdidas - (horasRepostas + horasAbonadas);
 
-            return {
-                horasPerdidas,
-                horasRepostas,
-                resultadoHoras
-            };
-        }
+        return {
+            horasPerdidas,
+            horasRepostas,
+            horasAbonadas,
+            resultadoHoras
+        };
+    }
 
-        function processRecordsForDashboard(data, filters) {
-            if (!data) return { records: [], peopleWithCertificate: {}, peopleWithoutCertificate: {}, functionAbsences: {} };
+        async function processRecordsForDashboard(data, filters) {
+            if (!data) return { records: [], peopleWithCertificate: {}, peopleWithoutCertificate: {}, functionAbsences: {}, abonos: {} };
 
             const { company, unit, startDate, endDate, shift } = filters;
             const peopleWithCertificate = {};
             const peopleWithoutCertificate = {};
             const functionAbsences = {}; // To store absences by function type
+            const abonos = {}; // To store abono information by employee
+
+            // Load abono data if not already loaded
+            if (!allAbonoData) {
+                await loadAbonoData();
+            }
 
             const filteredRecords = Object.entries(data)
                 .filter(([key, value]) => value && typeof value === 'object')
@@ -732,7 +772,6 @@
                     // Filter by company if specified (case-insensitive comparison for safety)
                     const companyMatch = !company ||
                         (record.empresa && record.empresa.toLowerCase() === company.toLowerCase());
-
 
                     // Filter by unit if specified (match by unitId)
                     const unitMatch = !unit ||
@@ -790,19 +829,46 @@
                         }
                     }
 
-
                     return companyMatch && unitMatch && dateMatch && shiftMatch;
                 })
                 .sort((a, b) => new Date(a.rdDate) - new Date(b.rdDate)); // Sort by date
+
+            // Process abonos for the filtered records period
+            if (allAbonoData) {
+    Object.entries(allAbonoData).forEach(([abonoId, abono]) => {
+        if (abono && isDateInRange(abono.date, startDate, endDate)) {
+            // Verifica se o abono é para a unidade filtrada
+            const unitMatch = !unit || (abono.unitId === unit);
+            
+            if (unitMatch) {
+                const hours = parseInt(abono.totalHours) || 0;
+                
+                // Cria uma entrada por unidade em vez de por funcionário
+                const unitKey = abono.unitId || 'no-unit';
+                
+                if (!abonos[unitKey]) {
+                    abonos[unitKey] = {
+                        unitName: abono.unitName || 'Unidade não informada',
+                        days: Math.round(hours / 8),
+                        hours: hours
+                    };
+                } else {
+                    abonos[unitKey].hours += hours;
+                    abonos[unitKey].days = Math.round(abonos[unitKey].hours / 8);
+                }
+            }
+        }
+    });
+}
 
             return {
                 records: filteredRecords,
                 peopleWithCertificate,
                 peopleWithoutCertificate,
-                functionAbsences // Include function absences in the result
+                functionAbsences,
+                abonos
             };
         }
-
 
         // Calculate summary metrics
         function calculateSummaryMetrics(result) {
@@ -810,18 +876,19 @@
             const peopleWithCertificate = result.peopleWithCertificate;
             const peopleWithoutCertificate = result.peopleWithoutCertificate;
             const functionAbsences = result.functionAbsences;
+            const abonos = result.abonos;
 
             let totalFaltas = 0;
             let totalFaltasEfetivas = 0;
             let totalHorasPerdidas = 0;
             let totalHorasRepostas = 0;
+            let totalHorasAbonadas = 0;
             let totalResultadoHoras = 0;
 
             let totalNightFaltas = 0;
             let totalNightHorasPerdidas = 0;
             let totalDayFaltas = 0;
             let totalDayHorasPerdidas = 0;
-
 
             const faltasPorDia = {};
             const horasPorDia = {};
@@ -831,28 +898,44 @@
             filteredRecords.forEach(record => {
                 const date = formatDisplayDate(record.rdDate); // Use formatted date for display
                 const absentCount = parseInt(record.absent) || 0;
-                const effectiveAbsent = calculateEffectiveAbsent(record);
-                const { horasPerdidas, horasRepostas, resultadoHoras } = calculateHoursMetrics(record);
+                
+                // Calculate abono hours for this record's unit/employee (if applicable)
+                let abonoHours = 0;
+                if (allAbonoData && record.employeeId) {
+                    const abonoDays = getAbonosForEmployee(record.employeeId, dateRangeStart.value, dateRangeEnd.value);
+                    abonoHours = abonoDays * 8;
+                }
+                
+                const effectiveAbsent = calculateEffectiveAbsent(record, abonoHours);
+                const { horasPerdidas, horasRepostas, horasAbonadas, resultadoHoras } = calculateHoursMetrics(record, abonoHours);
 
                 // Totais gerais
                 totalFaltas += absentCount;
                 totalFaltasEfetivas += effectiveAbsent;
-                totalHorasPerdidas += horasPerdidas;
-                totalHorasRepostas += horasRepostas;
-                totalResultadoHoras += resultadoHoras;
+                totalHorasPerdidas = result.records.reduce((sum, record) => {
+                const abonoHours = getAbonosForEmployee(record.employeeId, dateRangeStart.value, dateRangeEnd.value);
+                return sum + (parseInt(record.absent) || 0) * 8;
+            }, 0);
+
+            totalHorasRepostas = result.records.reduce((sum, record) => {
+                return sum + (parseInt(record.totalReplacementHours) || 0);
+            }, 0);
+
+            totalHorasAbonadas = Object.values(result.abonos).reduce((sum, abono) => {
+                return sum + (parseInt(abono.hours) || 0);
+            }, 0);
+
+            totalResultadoHoras = totalHorasPerdidas - (totalHorasRepostas + totalHorasAbonadas);
+                totalHorasAbonadas = Object.values(result.abonos).reduce((sum, abono) => sum + abono.hours, 0);
 
                 // Faltas e Horas por Período (Dia vs Noite)
-                // Check if the record's time falls within the night shift definition (22:00 to 06:00)
                 if (isNightShiftTime(record.rdDate)) {
                     totalNightFaltas += absentCount;
-                     // Assuming 8 hours per absence in night shift based on your previous calculation
                     totalNightHorasPerdidas += absentCount * 8;
                 } else {
                     totalDayFaltas += absentCount;
-                    // Assuming 8 hours per absence in day shift based on your previous calculation
                     totalDayHorasPerdidas += absentCount * 8;
                 }
-
 
                 // Faltas por dia
                 if (!faltasPorDia[date]) {
@@ -864,11 +947,13 @@
                 if (!horasPorDia[date]) {
                     horasPorDia[date] = {
                         perdidas: 0,
-                        repostas: 0
+                        repostas: 0,
+                        abonadas: 0
                     };
                 }
                 horasPorDia[date].perdidas += horasPerdidas;
                 horasPorDia[date].repostas += horasRepostas;
+                horasPorDia[date].abonadas += horasAbonadas;
 
                 // Faltas por turno
                 const turno = record.shift ? capitalizeFirstLetter(record.shift) : 'Não informado';
@@ -878,7 +963,7 @@
                 faltasPorTurno[turno] += absentCount;
 
                 // Faltas por unidade
-                const unidade = units.find(u => u.id === record.unitId)?.name || record.unitName || 'Não informado'; // Use unitName if unitId not found
+                const unidade = units.find(u => u.id === record.unitId)?.name || record.unitName || 'Não informado';
                 if (!faltasPorUnidade[unidade]) {
                     faltasPorUnidade[unidade] = 0;
                 }
@@ -887,25 +972,32 @@
 
             // Ordenar pessoas com atestado por frequência
             const topAbsentWithCertificate = Object.entries(peopleWithCertificate)
-                .sort((a, b) => b[1] - a[1]); // Get all, slice in render
+                .sort((a, b) => b[1] - a[1]);
 
             // Ordenar pessoas sem atestado por frequência
             const topAbsentWithoutCertificate = Object.entries(peopleWithoutCertificate)
-                .sort((a, b) => b[1] - a[1]); // Get all, slice in render
+                .sort((a, b) => b[1] - a[1]);
 
             // Convert function absences object to array for table rendering
-             const functionAbsencesArray = Object.entries(functionAbsences)
-                 .map(([func, count]) => ({ function: capitalizeFirstLetter(func), count }))
-                 .sort((a, b) => b.count - a.count); // Sort by count
+            const functionAbsencesArray = Object.entries(functionAbsences)
+                .map(([func, count]) => ({ function: capitalizeFirstLetter(func), count }))
+                .sort((a, b) => b.count - a.count);
 
+            // Convert abonos to array for display
+            const abonosArray = Object.values(abonos).map(abono => ({
+                employeeName: abono.name,
+                unitName: abono.unitName,
+                days: abono.days,
+                hours: abono.hours
+            })).sort((a, b) => b.days - a.days);
 
-             // Sort dates for charts
+            // Sort dates for charts
             const sortedDates = Object.keys(faltasPorDia).sort((a, b) => {
-                 const [dayA, monthA, yearA] = a.split('/').map(Number);
-                 const [dayB, monthB, yearB] = b.split('/').map(Number);
-                 const dateA = new Date(yearA, monthA - 1, dayA);
-                 const dateB = new Date(yearB, monthB - 1, dayB);
-                 return dateA - dateB;
+                const [dayA, monthA, yearA] = a.split('/').map(Number);
+                const [dayB, monthB, yearB] = b.split('/').map(Number);
+                const dateA = new Date(yearA, monthA - 1, dayA);
+                const dateB = new Date(yearB, monthB - 1, dayB);
+                return dateA - dateB;
             });
 
             const sortedFaltasPorDia = {};
@@ -915,24 +1007,25 @@
                 sortedHorasPorDia[date] = horasPorDia[date];
             });
 
-
             return {
                 totalFaltas,
                 totalFaltasEfetivas,
                 totalHorasPerdidas,
                 totalHorasRepostas,
+                totalHorasAbonadas,
                 totalResultadoHoras,
                 totalNightFaltas,
                 totalNightHorasPerdidas,
                 totalDayFaltas,
                 totalDayHorasPerdidas,
-                faltasPorDia: sortedFaltasPorDia, // Use sorted data for charts
-                horasPorDia: sortedHorasPorDia,   // Use sorted data for charts
+                faltasPorDia: sortedFaltasPorDia,
+                horasPorDia: sortedHorasPorDia,
                 faltasPorTurno,
                 faltasPorUnidade,
                 topAbsentWithCertificate,
                 topAbsentWithoutCertificate,
-                functionAbsences: functionAbsencesArray // Pass as sorted array
+                functionAbsences: functionAbsencesArray,
+                abonos: abonosArray
             };
         }
 
@@ -967,72 +1060,129 @@
             return tableHtml;
         }
 
+        // Render abonos table
+        function renderAbonosTable(abonosList) {
+    if (abonosList.length === 0) {
+        return '<p>Nenhum abono registrado.</p>';
+    }
+    
+    let tableHtml = `
+        <table class="absent-table">
+            <thead>
+                <tr>
+                    <th>Unidade</th>
+                    <th>Dias</th>
+                    <th>Horas</th>
+                </tr>
+            </thead>
+            <tbody>`;
+    
+    abonosList.forEach(abono => {
+        tableHtml += `
+            <tr>
+                <td>${abono.unitName}</td>
+                <td>${abono.days}</td>
+                <td>${abono.hours}h</td>
+            </tr>`;
+    });
+    
+    tableHtml += `</tbody></table>`;
+    return tableHtml;
+}
 
         // Update metrics cards
         function updateMetricsCards(metrics) {
-            metricsGrid.innerHTML = `
-                <div class="metric-card card-theme-primary"> <!-- Added theme class -->
-                    <div class="metric-title">Total de Faltas</div>
-                    <div class="metric-value">${metrics.totalFaltas}</div>
-                    <div class="metric-detail">Número total de faltas no período</div>
-                </div>
-                <div class="metric-card card-theme-danger"> <!-- Added theme class -->
-                    <div class="metric-title">Faltas Efetivas</div>
-                    <div class="metric-value ${metrics.totalFaltasEfetivas > 0 ? 'metric-negative' : 'metric-positive'}">
-                        ${metrics.totalFaltasEfetivas}
-                    </div>
-                    <div class="metric-detail">Faltas não cobertas por reposição</div>
-                </div>
-                <div class="metric-card card-theme-danger"> <!-- Added theme class -->
-                    <div class="metric-title">Horas Perdidas</div>
-                    <div class="metric-value metric-negative">${metrics.totalHorasPerdidas}h</div>
-                    <div class="metric-detail">Total de horas perdidas por faltas</div>
-                </div>
-                <div class="metric-card card-theme-success"> <!-- Added theme class -->
-                    <div class="metric-title">Horas Repostas</div>
-                    <div class="metric-value metric-positive">${metrics.totalHorasRepostas}h</div>
-                    <div class="metric-detail">Total de horas repostas pela equipe</div>
-                </div>
-                <div class="metric-card card-theme-info"> <!-- Added theme class -->
-                    <div class="metric-title">Resultado de Horas</div>
-                    <div class="metric-value ${metrics.totalResultadoHoras > 0 ? 'metric-negative' : 'metric-positive'}">
-                        ${metrics.totalResultadoHoras}h
-                    </div>
-                    <div class="metric-detail">Horas perdidas - horas repostas</div>
-                </div>
-                <div class="metric-card card-theme-warning"> <!-- Added theme class -->
-                    <div class="metric-title">Média Diária de Faltas</div>
-                    <div class="metric-value ${(metrics.totalFaltas / Object.keys(metrics.faltasPorDia).length) > 3 ? 'metric-negative' : 'metric-positive'}">
-                        ${Object.keys(metrics.faltasPorDia).length > 0 ?
-                            (metrics.totalFaltas / Object.keys(metrics.faltasPorDia).length).toFixed(1) : 0}
-                    </div>
-                    <div class="metric-detail">Média de faltas por dia útil</div>
-                </div>
-                 <div class="metric-card card-theme-primary"> <!-- Added theme class -->
-                    <div class="metric-title">Faltas e Horas (Dia)</div>
-                    <div class="metric-value">${metrics.totalDayFaltas} faltas</div>
-                    <div class="metric-detail">${metrics.totalDayHorasPerdidas}h perdidas entre 06:01 e 21:59</div>
-                </div>
-                 <div class="metric-card card-theme-secondary"> <!-- Added theme class -->
-                    <div class="metric-title">Faltas e Horas (Noite)</div>
-                    <div class="metric-value">${metrics.totalNightFaltas} faltas</div>
-                    <div class="metric-detail">${metrics.totalNightHorasPerdidas}h perdidas entre 22:00 e 06:00</div>
-                </div>
-                <div class="metric-card card-theme-info"> <!-- Added theme class -->
-                    <div class="metric-title">Pessoas com Mais Faltas (com atestado)</div>
-                    ${renderAbsentPeopleTable(metrics.topAbsentWithCertificate)}
-                </div>
-                <div class="metric-card card-theme-warning"> <!-- Added theme class -->
-                    <div class="metric-title">Pessoas com Mais Faltas (sem atestado)</div>
-                    ${renderAbsentPeopleTable(metrics.topAbsentWithoutCertificate)}
-                </div>
-                 <div class="metric-card card-theme-purple"> <!-- Added theme class -->
-                    <div class="metric-title">Faltas por Função</div>
-                    ${renderFunctionAbsencesTable(metrics.functionAbsences)}
-                </div>
-            `;
-        }
-
+    metricsGrid.innerHTML = `
+        <!-- Linha 1 - Métricas principais -->
+        <div class="metric-card card-theme-primary">
+            <div class="metric-title">Total de Faltas</div>
+            <div class="metric-value">${metrics.totalFaltas}</div>
+            <div class="metric-detail">Número total de faltas no período</div>
+        </div>
+        
+        <div class="metric-card card-theme-danger">
+            <div class="metric-title">Faltas Efetivas</div>
+            <div class="metric-value ${metrics.totalFaltasEfetivas > 0 ? 'metric-negative' : 'metric-positive'}">
+                ${metrics.totalFaltasEfetivas}
+            </div>
+            <div class="metric-detail">Faltas não cobertas por reposição ou abono</div>
+        </div>
+        
+        <div class="metric-card card-theme-danger">
+            <div class="metric-title">Horas Perdidas</div>
+            <div class="metric-value metric-negative">${metrics.totalHorasPerdidas}h</div>
+            <div class="metric-detail">Total de horas perdidas por faltas</div>
+        </div>
+        
+        <!-- Linha 2 - Horas -->
+        <div class="metric-card card-theme-success">
+            <div class="metric-title">Horas Repostas</div>
+            <div class="metric-value metric-positive">${metrics.totalHorasRepostas}h</div>
+            <div class="metric-detail">Total de horas repostas pela equipe</div>
+        </div>
+        
+        <div class="metric-card card-theme-warning">
+            <div class="metric-title">Horas Abonadas</div>
+            <div class="metric-value">${metrics.totalHorasAbonadas}h</div>
+            <div class="metric-detail">Total de horas abonadas (${(metrics.totalHorasAbonadas / 8).toFixed(1)} dias)</div>
+        </div>
+        
+        <div class="metric-card card-theme-info">
+    <div class="metric-title">Resultado de Horas</div>
+    <div class="metric-value ${metrics.totalResultadoHoras > 0 ? 'metric-negative' : 'metric-positive'}">
+        ${metrics.totalResultadoHoras}h
+    </div>
+    <div class="metric-detail">
+        ${metrics.totalHorasPerdidas}h perdidas - 
+        (${metrics.totalHorasRepostas}h repostas + 
+        ${metrics.totalHorasAbonadas}h abonadas)
+    </div>
+</div>
+        
+        <!-- Linha 3 - Médias e turnos -->
+        <div class="metric-card card-theme-warning">
+            <div class="metric-title">Média Diária de Faltas</div>
+            <div class="metric-value ${(metrics.totalFaltas / Object.keys(metrics.faltasPorDia).length) > 3 ? 'metric-negative' : 'metric-positive'}">
+                ${Object.keys(metrics.faltasPorDia).length > 0 ? 
+                  (metrics.totalFaltas / Object.keys(metrics.faltasPorDia).length).toFixed(1) : 0}
+            </div>
+            <div class="metric-detail">Média de faltas por dia útil</div>
+        </div>
+        
+        <div class="metric-card card-theme-primary">
+            <div class="metric-title">Faltas e Horas (Dia)</div>
+            <div class="metric-value">${metrics.totalDayFaltas} faltas</div>
+            <div class="metric-detail">${metrics.totalDayHorasPerdidas}h perdidas (06:01-21:59)</div>
+        </div>
+        
+        <div class="metric-card card-theme-secondary">
+            <div class="metric-title">Faltas e Horas (Noite)</div>
+            <div class="metric-value">${metrics.totalNightFaltas} faltas</div>
+            <div class="metric-detail">${metrics.totalNightHorasPerdidas}h perdidas (22:00-06:00)</div>
+        </div>
+        
+        <!-- Linha 4 - Tabelas -->
+        <div class="metric-card card-theme-info">
+            <div class="metric-title">Pessoas com Mais Faltas (com atestado)</div>
+            ${renderAbsentPeopleTable(metrics.topAbsentWithCertificate)}
+        </div>
+        
+        <div class="metric-card card-theme-warning">
+            <div class="metric-title">Pessoas com Mais Faltas (sem atestado)</div>
+            ${renderAbsentPeopleTable(metrics.topAbsentWithoutCertificate)}
+        </div>
+        
+        <div class="metric-card card-theme-purple">
+            <div class="metric-title">Faltas por Função</div>
+            ${renderFunctionAbsencesTable(metrics.functionAbsences)}
+        </div>
+        
+        <div class="metric-card card-theme-success">
+            <div class="metric-title">Abonos Registrados</div>
+            ${renderAbonosTable(metrics.abonos)}
+        </div>
+    `;
+}
 
         // Update charts
         function updateCharts(metrics) {
@@ -1085,9 +1235,10 @@
                 }
             });
 
-            // Horas Perdidas vs Horas Repostas
+            // Horas Perdidas vs Horas Repostas vs Horas Abonadas
             const horasPerdidasData = dates.map(date => metrics.horasPorDia[date]?.perdidas || 0);
             const horasRepostasData = dates.map(date => metrics.horasPorDia[date]?.repostas || 0);
+            const horasAbonadasData = dates.map(date => metrics.horasPorDia[date]?.abonadas || 0);
 
             if (hoursChart) hoursChart.destroy();
 
@@ -1111,6 +1262,15 @@
                             data: horasRepostasData,
                             backgroundColor: 'rgba(76, 201, 240, 0.2)', /* Using success color with opacity */
                             borderColor: 'rgba(76, 201, 240, 1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        },
+                        {
+                            label: 'Horas Abonadas',
+                            data: horasAbonadasData,
+                            backgroundColor: 'rgba(248, 150, 30, 0.2)', /* Using warning color with opacity */
+                            borderColor: 'rgba(248, 150, 30, 1)',
                             borderWidth: 2,
                             tension: 0.1,
                             fill: true
@@ -1278,17 +1438,24 @@
             if (filteredRecords.length === 0) {
                 summaryTableBody.innerHTML = `
                     <tr>
-                        <td colspan="10" style="text-align: center;">Nenhum registro encontrado para os filtros selecionados</td>
+                        <td colspan="11" style="text-align: center;">Nenhum registro encontrado para os filtros selecionados</td>
                     </tr>
                 `;
                 return;
             }
 
             filteredRecords.forEach(record => {
-                const effectiveAbsent = calculateEffectiveAbsent(record);
-                const { horasPerdidas, horasRepostas, resultadoHoras } = calculateHoursMetrics(record);
-                const unitName = units.find(u => u.id === record.unitId)?.name || record.unitName || 'Não informado'; // Use unitName if unitId not found
-                 const companyName = record.empresa|| 'Não informado';
+                // Calculate abono hours for this record's unit/employee (if applicable)
+                let abonoHours = 0;
+                if (allAbonoData && record.employeeId) {
+                    const abonoDays = getAbonosForEmployee(record.employeeId, dateRangeStart.value, dateRangeEnd.value);
+                    abonoHours = abonoDays * 8;
+                }
+                
+                const effectiveAbsent = calculateEffectiveAbsent(record, abonoHours);
+                const { horasPerdidas, horasRepostas, horasAbonadas, resultadoHoras } = calculateHoursMetrics(record, abonoHours);
+                const unitName = units.find(u => u.id === record.unitId)?.name || record.unitName || 'Não informado';
+                const companyName = record.empresa || 'Não informado';
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -1301,6 +1468,7 @@
                     <td>${effectiveAbsent}</td>
                     <td>${horasPerdidas}h</td>
                     <td>${horasRepostas}h</td>
+                    <td>${horasAbonadas}h</td>
                     <td class="${resultadoHoras > 0 ? 'metric-negative' : 'metric-positive'}">${resultadoHoras}h</td>
                 `;
                 summaryTableBody.appendChild(row);
@@ -1308,8 +1476,8 @@
         }
 
         // Load and process data
-        function loadDashboardData() {
-            const company = companyFilter.value; // Get selected company
+        async function loadDashboardData() {
+            const company = companyFilter.value;
             const unit = unitFilter.value;
             const startDate = dateRangeStart.value;
             const endDate = dateRangeEnd.value;
@@ -1317,42 +1485,40 @@
 
             metricsGrid.innerHTML = '<div class="loading">Carregando dados...</div>';
 
-            // Use the already loaded data if available, otherwise fetch
-            if (!allRecordsData) {
-                 const recordsRef = ref(database, 'rdRecords');
-                 onValue(recordsRef, (snapshot) => {
-                    allRecordsData = snapshot.val(); // Store all data
+            try {
+                // Load both records and abonos data in parallel
+                const [recordsSnapshot, abonoSnapshot] = await Promise.all([
+                    get(ref(database, 'rdRecords')),
+                    get(ref(database, 'abonoRecords'))
+                ]);
 
-                    if (!allRecordsData) {
-                        metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
-                        updateConnectionStatus('disconnected');
-                        clearDashboardContent();
-                        return;
-                    }
+                allRecordsData = recordsSnapshot.val();
+                allAbonoData = abonoSnapshot.val() || {};
 
-                    // Extract unique companies and units after initial load
-                    extractUniqueCompaniesAndUnits(allRecordsData);
-
-
-                    // Now process and display based on filters
-                    processAndDisplayData(allRecordsData, { company, unit, startDate, endDate, shift });
-                    updateConnectionStatus('connected');
-
-                }, (error) => {
-                    console.error('Erro ao carregar dados:', error);
-                    metricsGrid.innerHTML = '<div class="no-records" style="color: #ea4335;">Erro ao carregar dados. Verifique sua conexão.</div>';
+                if (!allRecordsData) {
+                    metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
                     updateConnectionStatus('disconnected');
                     clearDashboardContent();
-                });
-            } else {
-                // Data is already loaded, just process with current filters
-                processAndDisplayData(allRecordsData, { company, unit, startDate, endDate, shift });
-                 updateConnectionStatus('connected'); // Assume connected if data is loaded
+                    return;
+                }
+
+                // Extract unique companies and units after initial load
+                extractUniqueCompaniesAndUnits(allRecordsData);
+
+                // Now process and display based on filters
+                await processAndDisplayData(allRecordsData, { company, unit, startDate, endDate, shift });
+                updateConnectionStatus('connected');
+
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                metricsGrid.innerHTML = '<div class="no-records" style="color: #ea4335;">Erro ao carregar dados. Verifique sua conexão.</div>';
+                updateConnectionStatus('disconnected');
+                clearDashboardContent();
             }
         }
 
-        function processAndDisplayData(data, filters) {
-             const result = processRecordsForDashboard(data, filters);
+        async function processAndDisplayData(data, filters) {
+             const result = await processRecordsForDashboard(data, filters);
 
              if (result.records.length === 0) {
                  metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado para os filtros selecionados</div>';
@@ -1369,7 +1535,7 @@
 
          function clearDashboardContent() {
              // Clear metrics
-             metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>'; // Display message
+             metricsGrid.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
              // Clear charts
              if (absencesChart) absencesChart.destroy();
              if (hoursChart) hoursChart.destroy();
@@ -1378,11 +1544,10 @@
              // Clear table
              summaryTableBody.innerHTML = `
                     <tr>
-                        <td colspan="10" style="text-align: center;">Nenhum registro encontrado</td>
+                        <td colspan="11" style="text-align: center;">Nenhum registro encontrado</td>
                     </tr>
                 `;
          }
-
 
         // Initialize filters with default dates
         function initFilters() {
@@ -1406,14 +1571,12 @@
             [companyFilter, unitFilter, dateRangeStart, dateRangeEnd, shiftFilter].forEach(filter => {
                 filter.addEventListener('change', loadDashboardData);
             });
-
-             // Note: Company filter is now populated after data load in extractUniqueCompaniesAndUnits
         }
 
         // Handle logout
         function handleLogout() {
             signOut(auth).then(() => {
-                window.location.href = 'index.html'; // Redireciona para a página de login
+                window.location.href = 'index.html';
             }).catch((error) => {
                 console.error('Erro ao fazer logout:', error);
             });
@@ -1421,8 +1584,7 @@
 
         // Initialize app
         async function initApp() {
-            // Data will be loaded by loadDashboardData on auth state change
-             initFilters(); // Initialize filters first
+            initFilters();
         }
 
         // Event listeners
@@ -1431,18 +1593,23 @@
         // Check auth state
         onAuthStateChanged(auth, (user) => {
             if (user && user.emailVerified) {
-                // User is signed in and email is verified
-                initApp(); // Initialize filters and then load data
-                loadDashboardData(); // Load data after filters are initialized
+                initApp();
+                loadDashboardData();
                 updateConnectionStatus('connected');
             } else {
-                // User is not signed in or email is not verified
-                window.location.href = 'index.html'; // Redireciona para a página de login
+                window.location.href = 'index.html';
             }
         });
 
         // Initialize connection status
         updateConnectionStatus('disconnected');
+
+        console.log("Debug - Cálculo de horas:", {
+    perdidas: totalHorasPerdidas,
+    repostas: totalHorasRepostas,
+    abonadas: totalHorasAbonadas,
+    resultado: totalResultadoHoras
+});
     </script>
 </body>
 </html>

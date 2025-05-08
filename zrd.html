@@ -444,6 +444,9 @@
                             <option value="encarregado">Encarregado</option>
                             <option value="operador">Operador</option>
                             <option value="ajudante">Ajudante</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="tst">Técnico de Segurança do Trabalho</option>
+                            <option value="limpeza">Limpeza</option>
                         </select>
                         <input type="number" class="absence-count" placeholder="Qtd" min="0" required>
                         <button type="button" class="remove-btn">X</button>
@@ -561,6 +564,9 @@
                     <option value="encarregado">Encarregado</option>
                     <option value="operador">Operador</option>
                     <option value="ajudante">Ajudante</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="tst">Técnico de Segurança do Trabalho</option>
+                    <option value="limpeza">Limpeza</option>
                 </select>
                 <input type="number" class="absence-count" placeholder="Qtd" min="0" required>
                 <button type="button" class="remove-btn">X</button>
@@ -594,6 +600,9 @@
                 encarregado: 0,
                 operador:0,
                 ajudante: 0,
+                supervisor: 0,
+                tst: 0,
+                limpeza: 0,
                 details: []
             };
             
@@ -726,7 +735,7 @@
             
             isSpecialDay = isSunday || isHolidayToday;
             appliedPercentage = isSpecialDay ? 100 : 50;
-            totalCalculatedHours = totalBaseHours * (1 + appliedPercentage / 100);
+            totalCalculatedHours = totalBaseHours 
             
             document.getElementById('replacementCalculation').textContent = `${totalBaseHours} horas + ${appliedPercentage}%`;
             document.getElementById('holidayInfo').innerHTML = isSpecialDay ? 

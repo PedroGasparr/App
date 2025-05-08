@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de Dias Abonados</title>
+    <link rel="icon" href="img/social-media.gif" type="image/x-icon">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 28px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+            background-color: var(--light);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 25px;
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .back-button {
+            background-color: var(--gray);
+            margin-top: 15px;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        /* Employee List Styles */
+        .employee-list {
+            margin-top: 20px;
+            background: var(--light);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--light-gray);
+        }
+
+        .employee-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .employee-checkbox-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: var(--transition);
+            border: 1px solid var(--light-gray);
+        }
+
+        .employee-checkbox-container:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .employee-checkbox-top {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .custom-checkbox {
+            position: relative;
+            width: 22px;
+            height: 22px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .custom-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 22px;
+            width: 22px;
+            background-color: white;
+            border: 2px solid var(--gray);
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .custom-checkbox:hover .checkmark {
+            border-color: var(--primary);
+        }
+
+        .custom-checkbox input:checked ~ .checkmark {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .custom-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        .employee-name {
+            font-weight: 500;
+            color: var(--dark);
+            flex-grow: 1;
+        }
+
+        .days-input-container {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--gray);
+            display: flex;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .days-input {
+            width: 80px;
+            padding: 8px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--light-gray);
+            margin-right: 10px;
+        }
+
+        /* Result Box Styles */
+        .result-box {
+            background: var(--light);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin: 20px 0;
+            border: 1px solid var(--light-gray);
+        }
+
+        .result-box strong {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--dark);
+            font-size: 18px;
+        }
+
+        #totalDaysDisplay {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        /* Loader Styles */
+        #loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loader div {
+            background: white;
+            padding: 30px 40px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 20px;
+            }
+            
+            .employee-checkboxes {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .form-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div>Carregando...</div>
+    </div>
+
+    <div class="form-container">
+        <h1>Checklist de Dias Abonados</h1>
+        <form id="abonoForm">
+            <label for="abonoDate">Data:</label>
+            <input type="date" id="abonoDate" required>
+
+            <label for="unit">Unidade:</label>
+            <select id="unit" required>
+                <option value="">Selecione uma unidade</option>
+                <!-- As opções serão preenchidas dinamicamente pelo JavaScript -->
+            </select>
+
+            <label for="responsible">Responsável pelo Abono:</label>
+            <input type="text" id="responsible" required>
+
+            <div class="employee-list">
+                <label>Selecione os funcionários para abonar dias:</label>
+                <div id="employeeCheckboxes" class="employee-checkboxes">
+                    <!-- Checkboxes serão gerados dinamicamente pelo JavaScript -->
+                </div>
+            </div>
+
+            <div class="result-box">
+                <strong>Resumo do Abono:</strong>
+                <div id="totalDaysDisplay">Total de dias a abonar: 0</div>
+                <div id="totalHoursDisplay">Total de horas a abonar: 0</div>
+                <div id="selectedEmployeesDisplay">Funcionários selecionados: 0</div>
+            </div>
+
+            <label for="bankProof">Comprovante para o Banco (texto):</label>
+<textarea id="bankProof" rows="4" required placeholder="Informe o texto do comprovante que será enviado ao banco, incluindo dias e horas"></textarea>
+            <button type="submit">Registrar Abono</button>
+        </form>
+
+        <button class="back-button" onclick="window.location.href = 'zhome.html';">Voltar ao Dashboard</button>
+    </div>
+    
+
+    <script src="js.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { 
+            getDatabase, 
+            ref, 
+            push, 
+            set,
+            get,
+            child
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        
+        // Variáveis globais
+        let currentUser = null;
+        let units = [];
+        let employees = {};
+    
+        // Funções auxiliares
+        function showLoader() {
+            document.getElementById('loader').style.display = 'flex';
+        }
+    
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        function updateTotalDays() {
+        const selectedCheckboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
+        let totalDays = 0;
+        
+        selectedCheckboxes.forEach(checkbox => {
+            const daysInput = checkbox.closest('.employee-checkbox-container').querySelector('.days-input');
+            totalDays += parseInt(daysInput.value) || 0;
+        });
+        
+        document.getElementById('totalDaysDisplay').textContent = `Total de dias a abonar: ${totalDays}`;
+        document.getElementById('totalHoursDisplay').textContent = `Total de horas a abonar: ${totalDays * 8}`;
+        document.getElementById('selectedEmployeesDisplay').textContent = `Funcionários selecionados: ${selectedCheckboxes.length}`;
+    }
+    
+        async function loadUnits() {
+            try {
+                showLoader();
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, 'units'));
+                
+                if (snapshot.exists()) {
+                    units = [];
+                    for (const unitId in snapshot.val()) {
+                        units.push({
+                            id: unitId,
+                            name: snapshot.val()[unitId].name
+                        });
+                    }
+                    
+                    units.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    const unitSelect = document.getElementById('unit');
+                    unitSelect.innerHTML = '<option value="">Selecione uma unidade</option>';
+                    units.forEach(unit => {
+                        const option = document.createElement('option');
+                        option.value = unit.id;
+                        option.textContent = unit.name;
+                        unitSelect.appendChild(option);
+                    });
+                }
+                hideLoader();
+            } catch (error) {
+                hideLoader();
+                console.error("Erro ao carregar unidades:", error);
+                alert("Erro ao carregar unidades. Por favor, recarregue a página.");
+            }
+        }
+    
+        async function loadEmployees(unitId) {
+            try {
+                showLoader();
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, `units/${unitId}/employees`));
+                
+                if (snapshot.exists()) {
+                    employees[unitId] = [];
+                    for (const employeeId in snapshot.val()) {
+                        employees[unitId].push({
+                            id: employeeId,
+                            name: snapshot.val()[employeeId].name
+                        });
+                    }
+                    
+                    employees[unitId].sort((a, b) => a.name.localeCompare(b.name));
+                    generateEmployeeCheckboxes(unitId);
+                } else {
+                    document.getElementById('employeeCheckboxes').innerHTML = '<p>Nenhum funcionário cadastrado nesta unidade.</p>';
+                }
+                hideLoader();
+            } catch (error) {
+                hideLoader();
+                console.error(`Erro ao carregar funcionários da unidade ${unitId}:`, error);
+                alert("Erro ao carregar funcionários. Por favor, tente novamente.");
+            }
+        }
+    
+        function generateEmployeeCheckboxes(unitId) {
+            const container = document.getElementById('employeeCheckboxes');
+            container.innerHTML = '';
+            
+            if (!employees[unitId] || employees[unitId].length === 0) {
+                container.innerHTML = '<p>Nenhum funcionário cadastrado nesta unidade.</p>';
+                return;
+            }
+            
+            employees[unitId].forEach(employee => {
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'employee-checkbox-container';
+                
+                const checkboxDivTop = document.createElement('div');
+                checkboxDivTop.className = 'employee-checkbox-top';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `emp-${employee.id}`;
+                checkbox.value = employee.id;
+                
+                const checkmark = document.createElement('span');
+                checkmark.className = 'checkmark';
+                
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.className = 'employee-name';
+                label.textContent = employee.name;
+                
+                const daysDiv = document.createElement('div');
+                daysDiv.className = 'days-input-container';
+                
+                const daysLabel = document.createElement('span');
+                daysLabel.textContent = 'Dias:';
+                
+                const daysInput = document.createElement('input');
+                daysInput.type = 'number';
+                daysInput.className = 'days-input';
+                daysInput.min = '1';
+                daysInput.value = '1';
+                daysInput.addEventListener('input', updateTotalDays);
+                
+                checkbox.addEventListener('change', () => {
+                    daysDiv.style.display = checkbox.checked ? 'flex' : 'none';
+                    updateTotalDays();
+                });
+                
+                checkboxDivTop.appendChild(createCheckboxContainer(checkbox, checkmark));
+                checkboxDivTop.appendChild(label);
+                daysDiv.appendChild(daysLabel);
+                daysDiv.appendChild(daysInput);
+                
+                checkboxDiv.appendChild(checkboxDivTop);
+                checkboxDiv.appendChild(daysDiv);
+                container.appendChild(checkboxDiv);
+            });
+        }
+    
+        function createCheckboxContainer(checkbox, checkmark) {
+            const container = document.createElement('div');
+            container.className = 'custom-checkbox';
+            container.appendChild(checkbox);
+            container.appendChild(checkmark);
+            return container;
+        }
+    
+        // Inicialização principal
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Define a data atual como padrão
+            const today = new Date();
+            document.getElementById('abonoDate').valueAsDate = today;
+            
+            await loadUnits();
+            
+            // Configura eventos
+            document.getElementById('unit').addEventListener('change', function() {
+                const unitId = this.value;
+                if (unitId) loadEmployees(unitId);
+            });
+            
+            // Evento de submit do formulário
+            document.getElementById('abonoForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                showLoader();
+                
+                if (!currentUser) {
+                    hideLoader();
+                    alert("Você precisa estar logado para enviar o formulário!");
+                    return window.location.href = 'login.html';
+                }
+                
+                // Coleta os dados do formulário
+                const unitId = document.getElementById('unit').value;
+                const unitName = units.find(u => u.id === unitId)?.name || '';
+                
+                const selectedEmployees = Array.from(
+                    document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked')
+                ).map(checkbox => {
+                    const container = checkbox.closest('.employee-checkbox-container');
+                    const employeeId = checkbox.value;
+                    const employeeName = container.querySelector('.employee-name').textContent;
+                    const days = parseInt(container.querySelector('.days-input').value) || 0;
+                    
+                    return { employeeId, employeeName, days };
+                });
+                
+                const formData = {
+                date: document.getElementById('abonoDate').value,
+                unitId,
+                unitName,
+                responsible: document.getElementById('responsible').value,
+                bankProof: document.getElementById('bankProof').value,
+                employees: selectedEmployees.map(emp => ({
+                    ...emp,
+                    hours: emp.days * 8 // Adiciona o cálculo das horas (8 horas por dia)
+                })),
+                totalDays: selectedEmployees.reduce((sum, emp) => sum + emp.days, 0),
+                totalHours: selectedEmployees.reduce((sum, emp) => sum + (emp.days * 8), 0), // Adiciona o total de horas
+                userId: currentUser.uid,
+                userEmail: currentUser.email,
+                timestamp: new Date().toISOString()
+            };
+                
+                // Validação
+                if (!formData.date || !formData.unitId || !formData.responsible || !formData.bankProof) {
+                    hideLoader();
+                    return alert("Por favor, preencha todos os campos obrigatórios.");
+                }
+                
+                if (selectedEmployees.length === 0) {
+                    hideLoader();
+                    return alert("Por favor, selecione pelo menos um funcionário para abonar dias.");
+                }
+    
+                try {
+                    // Salva no Firebase
+                    await set(push(ref(database, 'abonoRecords/')), formData);
+                    
+                    // Feedback e reset
+                    hideLoader();
+                    alert("Dados de abono registrados com sucesso!");
+                    
+                    // Reset do formulário
+                    document.getElementById('abonoForm').reset();
+                    document.getElementById('abonoDate').valueAsDate = new Date();
+                    document.getElementById('employeeCheckboxes').innerHTML = '';
+                    document.getElementById('totalDaysDisplay').textContent = 'Total de dias a abonar: 0';
+                    document.getElementById('selectedEmployeesDisplay').textContent = 'Funcionários selecionados: 0';
+                } catch (error) {
+                    hideLoader();
+                    console.error("Erro ao salvar dados:", error);
+                    alert(error.code === 'PERMISSION_DENIED' ? 
+                        "Permissão negada. Verifique se você está logado e seu email foi verificado." : 
+                        "Ocorreu um erro ao enviar os dados. Por favor, tente novamente.");
+                }
+            });
+        });
+    
+        // Monitora o estado de autenticação
+        // Monitora o estado de autenticação
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        console.log("Usuário logado:", user.email); // Adicione para debug
+    } else {
+        console.log("Nenhum usuário logado, redirecionando..."); // Adicione para debug
+        window.location.href = 'index.html';
+    }
+});
+    </script>
+</body>
+</html>

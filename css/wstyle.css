@@ -1,13 +1,14 @@
 :root {
     /* Cores */
-    --primary-color: #254c00;
-    --secondary-color: #8fb76d;
+    --primary-color: #3c4c8b;
+    --secondary-color: #6c7c9e;
     --background-color: #f6f5f7;
     --white: #FFFFFF;
     --light-gray: #eee;
     --dark-gray: #333;
     --border-gray: #DDDDDD;
     --error-color: #ff3333;
+    --h1-color-text: #a6f0bb;
     
     /* Fontes */
     --font-family: 'Montserrat', sans-serif;
@@ -62,7 +63,16 @@ h1 {
     font-weight: bold;
     margin: 0;
     font-size: var(--font-size-lg);
+    color: var(--white);
+}
+
+#entrar {
+    font-weight: bold;
+    margin: 0;
+    font-size: var(--font-size-lg);
     color: var(--primary-color);
+    position: relative;
+    bottom: 30px;
 }
 
 h2 {
@@ -76,7 +86,7 @@ p {
     line-height: 1.5;
     letter-spacing: 0.5px;
     margin: var(--spacing-md) 0;
-    color: var(--dark-gray);
+    color: var(--light-gray);
 }
 
 span {
@@ -267,8 +277,8 @@ input:focus, select:focus {
 }
 
 .social img {
-    width: 20px;
-    height: 20px;
+    width: 210px;
+    height: 180px;
 }
 
 .error-message {

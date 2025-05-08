@@ -175,15 +175,14 @@
     <div class="container" id="container">
         <div class="form-container sign-in-container">
             <form id="signInForm">
-                <h1>Entrar</h1>
-                <div class="login-section" style="display: none;">
-                  <h1>Entrar</h1>
-                  <div class="social-container">
-                      <div class="social" id="googleSignIn">
-                          <img src="./img/iconGoogle.png" alt="Google">
-                      </div>
-                  </div>
-                  <span>ou use sua conta</span>
+                <div class="social-container">
+                    <div class="social" id="googleSignIn">
+                        <img src="img/GZL - Logos_pages-to-jpg-0001.jpg" alt="Google">
+                    </div>
+                </div>
+                <h1 id="entrar">Entrar</h1>
+                <br>
+                <div class="login-section">
               </div>
                 <input type="email" id="loginEmail" placeholder="Email" required />
                 <div id="loginEmailError" class="error-message"></div>
@@ -195,14 +194,14 @@
         </div>
         <div class="form-container sign-up-container">
             <form id="signUpForm">
-                <h1>Criar Conta</h1>
+                <h1 id="entrar">Criar Conta</h1>
                 <input type="text" id="signUpName" placeholder="Nome Completo" required />
                 <div id="signUpNameError" class="error-message"></div>
                 <input type="email" id="signUpEmail" placeholder="Email" required />
                 <div id="signUpEmailError" class="error-message"></div>
                 <input type="password" id="signUpPassword" placeholder="Senha" required />
                 <div id="signUpPasswordError" class="error-message"></div>
-                <input type="date" id="signUpBirthdate" required />
+                <input type="date" id="signUpBirthdate"  required />
                 <div id="signUpBirthdateError" class="error-message"></div>
                 <select id="signUpUnit" required>
                     <option value="" disabled selected>Selecione sua unidade</option>
@@ -260,8 +259,7 @@
                 window.firebase.signInWithRedirect(window.firebase.provider)
                     .catch(error => {
                         document.getElementById('loader').style.display = 'none';
-                        console.error("Erro ao iniciar login com Google:", error);
-                        alert("Ocorreu um erro ao tentar fazer login com Google");
+                        console.error("Erro ao iniciar login com Google:", error);;
                     });
             });
             
