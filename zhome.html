@@ -415,7 +415,7 @@
       // Variável para armazenar o avatar aleatório gerado
       let randomAvatarUrl = '';
       // Variável para armazenar o destino após a senha ser validada
-      let targetUrl = '';
+      let targetUrl = 'manage_units.html';
       // Senha de acesso para Manage Units
       const MANAGE_UNITS_PASSWORD = "s3dfs3$#$";
 
@@ -452,7 +452,7 @@
         const password = document.getElementById('passwordInput').value;
         const errorElement = document.getElementById('passwordError');
         
-        if (password === MANAGE_UNITS_PASSWORD) {
+        if (password == MANAGE_UNITS_PASSWORD) {
           // Senha correta, redireciona para o destino
           document.getElementById('passwordModal').style.display = 'none';
           window.location.href = targetUrl;
@@ -464,29 +464,7 @@
       }
 
       // Função para converter dados em XLSX e baixar
-      function downloadXLSX(data) {
-        try {
-          // Excluir o campo 'photo' se existir
-          const filteredData = data.map(item => {
-            const { photo, ...rest } = item;
-            return rest;
-          });
-          
-          // Criar uma nova planilha
-          const ws = XLSX.utils.json_to_sheet(filteredData);
-          
-          // Criar um novo workbook
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Dados RDO");
-          
-          // Gerar o arquivo XLSX com data no nome
-          const dateStr = new Date().toISOString().slice(0, 10);
-          XLSX.writeFile(wb, `dados_rdo_${dateStr}.xlsx`);
-        } catch (error) {
-          console.error("Erro ao gerar XLSX:", error);
-          alert("Ocorreu um erro ao gerar o arquivo Excel.");
-        }
-      }
+      
 
       // Carregar os registros quando a página for carregada
       document.addEventListener('DOMContentLoaded', () => {
@@ -527,43 +505,6 @@
           showPasswordModal('manage_units.html', true);
         });
         
-        // Adiciona evento de clique ao botão de download
-        document.getElementById('downloadBtn').addEventListener('click', (e) => {
-          e.stopPropagation(); // Impede que o clique no botão dispare o evento do card
-          
-          // Mostrar mensagem de carregamento
-          const originalIcon = document.getElementById('downloadBtn').innerHTML;
-          document.getElementById('downloadBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-          
-          // Buscar dados do Firebase
-          const rdRecordsRef = ref(database, 'rdRecords');
-          onValue(rdRecordsRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-              // Converter objeto em array
-              const dataArray = Object.keys(data).map(key => ({
-                id: key,
-                ...data[key]
-              }));
-              
-              // Baixar como XLSX
-              downloadXLSX(dataArray);
-            } else {
-              alert('Nenhum dado encontrado para download.');
-            }
-            
-            // Restaurar ícone original
-            document.getElementById('downloadBtn').innerHTML = originalIcon;
-          }, {
-            onlyOnce: true, // Garante que o listener seja executado apenas uma vez
-            onError: (error) => {
-              console.error("Erro ao buscar dados:", error);
-              alert("Erro ao buscar dados do banco de dados.");
-              document.getElementById('downloadBtn').innerHTML = originalIcon;
-            }
-          });
-        });
-
         // Eventos do modal de senha
         document.getElementById('confirmBtn').addEventListener('click', checkPassword);
         
@@ -604,30 +545,6 @@
           });
         } else {
           document.getElementById('user-name').innerText = "Visitante";
-        }
-      });
-
-      // Garantir que o submenu venha fechado ao carregar a página
-      document.addEventListener('DOMContentLoaded', () => {
-        const submenu = document.getElementById('checklistMenu');
-        submenu.style.display = 'none'; // Deixa o submenu fechado ao carregar
-      });
-
-      // Lógica do submenu de checklist
-      document.getElementById('checklistToggle').addEventListener('click', (event) => {
-        event.preventDefault();
-        const submenu = document.getElementById('checklistMenu');
-        // Alterna a exibição do submenu
-        submenu.style.display = submenu.style.display === 'none' ? 'block' : 'none';
-      });
-
-      // Fechar o submenu se clicar fora dele
-      document.addEventListener("click", function (event) {
-        const checklistToggle = document.getElementById("checklistToggle");
-        const submenu = document.getElementById("checklistMenu");
-
-        if (!checklistToggle.contains(event.target) && !submenu.contains(event.target)) {
-          submenu.style.display = "none"; // Fecha o submenu se clicar fora dele
         }
       });
     </script>
