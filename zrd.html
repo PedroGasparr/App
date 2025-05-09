@@ -403,7 +403,7 @@
         <h1>Checklist RDO</h1>
         <form id="rdForm">
             <label for="rdDate">Data e Hora:</label>
-            <input type="datetime-local" id="rdDate" required readonly>
+            <input type="datetime-local" id="rdDate" required>
 
             <label for="unit">Unidade:</label>
             <select id="unit" required>
@@ -441,6 +441,7 @@
                     <div class="function-row">
                         <select class="function-type" required>
                             <option value="">Selecione</option>
+                            <option value="sem_faltas">Sem Faltas</option>
                             <option value="encarregado">Encarregado</option>
                             <option value="operador">Operador</option>
                             <option value="ajudante">Ajudante</option>
@@ -561,6 +562,7 @@
             newRow.innerHTML = `
                 <select class="function-type" required>
                     <option value="">Selecione</option>
+                    <option value="sem_faltas">Sem Faltas</option>
                     <option value="encarregado">Encarregado</option>
                     <option value="operador">Operador</option>
                     <option value="ajudante">Ajudante</option>
@@ -597,6 +599,7 @@
     
         function getFunctionAbsences() {
             const absences = {
+                sem_faltas: 0,
                 encarregado: 0,
                 operador:0,
                 ajudante: 0,
@@ -864,6 +867,23 @@
         function hideLoader() {
             document.getElementById('loader').style.display = 'none';
         }
+
+         const input = document.getElementById("rdDate");
+
+        input.addEventListener("input", function () {
+            const selectedDate = new Date(this.value);
+            
+            // Remove horas/minutos/segundos da comparação
+            const selectedDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+
+            const today = new Date();
+            const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+
+            if (selectedDay.getTime() !== yesterday.getTime()) {
+            alert("Você só pode selecionar a data de ontem!");
+            this.value = ""; // limpa o campo se for inválido
+            }
+        });
     
         // Inicialização principal
         document.addEventListener('DOMContentLoaded', async () => {
