@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de RD</title>
+    <link rel="icon" href="img/social-media.gif" type="image/x-icon">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 28px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+            background-color: var(--light);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 25px;
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .back-button {
+            background-color: var(--gray);
+            margin-top: 15px;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        .management-button {
+            background-color: var(--success);
+            margin-top: 15px;
+        }
+
+        .management-button:hover {
+            background-color: #3aa8d8;
+        }
+
+        /* Employee List Styles */
+        .employee-list {
+            display: none;
+            margin-top: 20px;
+            background: var(--light);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--light-gray);
+        }
+
+        .employee-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .employee-checkbox-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: var(--transition);
+            border: 1px solid var(--light-gray);
+        }
+
+        .employee-checkbox-container:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .employee-checkbox-top {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .custom-checkbox {
+            position: relative;
+            width: 22px;
+            height: 22px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .custom-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 22px;
+            width: 22px;
+            background-color: white;
+            border: 2px solid var(--gray);
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .custom-checkbox:hover .checkmark {
+            border-color: var(--primary);
+        }
+
+        .custom-checkbox input:checked ~ .checkmark {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .custom-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        .employee-name {
+            font-weight: 500;
+            color: var(--dark);
+            flex-grow: 1;
+        }
+
+        .absence-options {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--gray);
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .absence-type {
+            width: 100%;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--light-gray);
+            background-color: white;
+            font-size: 14px;
+        }
+
+        /* Replacement Hours Styles */
+        .replacement-hours-container {
+            margin-top: 15px;
+        }
+
+        .replacement-hour-input {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            background: white;
+            padding: 12px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .replacement-hour-input label {
+            margin: 0 15px 0 0;
+            width: 120px;
+            flex-shrink: 0;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .replacement-hour-input select {
+            flex-grow: 1;
+            margin: 0;
+        }
+
+        /* Result Box Styles */
+        .result-box {
+            background: var(--light);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin: 20px 0;
+            border: 1px solid var(--light-gray);
+        }
+
+        .result-box strong {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--dark);
+            font-size: 18px;
+        }
+
+        #replacementCalculation, #totalHoursDisplay {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        .warning {
+            color: var(--danger);
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* Loader Styles */
+        #loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loader div {
+            background: white;
+            padding: 30px 40px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        /* Image Preview */
+        #imagePreview {
+            max-width: 100%;
+            max-height: 250px;
+            margin-top: 15px;
+            display: none;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--light-gray);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 20px;
+            }
+            
+            .employee-checkboxes {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .form-container {
+                padding: 15px;
+            }
+            
+            .replacement-hour-input {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .replacement-hour-input label {
+                margin-bottom: 8px;
+                width: auto;
+            }
+        }
+          /* Adicionar estas novas regras CSS */
+          .function-absence-container {
+            margin-top: 15px;
+        }
+        
+        .function-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .function-row select {
+            flex: 2;
+        }
+        
+        .function-row input {
+            flex: 1;
+        }
+        
+        .function-row button {
+            flex: 0.5;
+            padding: 10px;
+            background-color: #f72585;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        #addFunctionBtn {
+            background-color: #4cc9f0;
+            width: auto;
+            padding: 10px 15px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div>Carregando...</div>
+    </div>
+
+    <div class="form-container">
+        <h1>Checklist RDO</h1>
+        <form id="rdForm">
+            <label for="rdDate">Data e Hora:</label>
+            <input type="datetime-local" id="rdDate" required>
+
+            <label for="unit">Unidade:</label>
+            <select id="unit" required>
+                <option value="">Selecione uma unidade</option>
+                <!-- As opções serão preenchidas dinamicamente pelo JavaScript -->
+            </select>
+
+
+            <label for="responsible">Responsável:</label>
+            <input type="text" id="responsible" required>
+
+            <label for="attended">Número de Pessoas Presentes:</label>
+            <input type="number" id="attended" required min="0">
+
+            <label for="absent">Número de Pessoas Faltantes:</label>
+            <input type="number" id="absent" required min="0">
+
+            <label for="replacementCount">Número de Pessoas que vão Repor:</label>
+            <input type="number" id="replacementCount" min="0" value="0">
+
+            <div id="replacementHoursContainer" class="replacement-hours-container">
+                <!-- Inputs de horas serão gerados dinamicamente aqui -->
+            </div>
+            
+            <button type="submit">Enviar</button>
+        </form>
+
+        <button class="back-button" onclick="window.location.href = 'zhome.html';">Voltar ao Dashboard</button>
+       </div>
+    <script src="js.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            sendEmailVerification
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { 
+            getDatabase, 
+            ref, 
+            push, 
+            set,
+            get,
+            child
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        
+        // Variáveis globais
+        let imageBase64 = null;
+        let totalCalculatedHours = 0;
+        let appliedPercentage = 0;
+        let isSpecialDay = false;
+        let currentUser = null;
+        let units = [];
+        let employees = {};
+    
+        // Feriados nacionais do Brasil
+        const brazilianHolidays = [
+            "01-01", "04-21", "05-01", "09-07", 
+            "10-12", "11-02", "11-15", "12-25"
+        ];
+    
+        // Funções auxiliares
+        function isHoliday(date) {
+            const monthDay = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            return brazilianHolidays.includes(monthDay);
+        }
+    
+        function getBrazilianDateTime() {
+            const now = new Date();
+            const localOffset = now.getTimezoneOffset();
+            const brasilOffset = -180;
+            const diff = (brasilOffset + localOffset) * 60000;
+            return new Date(now.getTime() + diff);
+        }
+    
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+    
+        async function loadUnits() {
+            try {
+                showLoader();
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, 'units'));
+                
+                if (snapshot.exists()) {
+                    units = [];
+                    for (const unitId in snapshot.val()) {
+                        units.push({
+                            id: unitId,
+                            name: snapshot.val()[unitId].name
+                        });
+                    }
+                    
+                    units.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    const unitSelect = document.getElementById('unit');
+                    unitSelect.innerHTML = '<option value="">Selecione uma unidade</option>';
+                    units.forEach(unit => {
+                        const option = document.createElement('option');
+                        option.value = unit.id;
+                        option.textContent = unit.name;
+                        unitSelect.appendChild(option);
+                    });
+                }
+                hideLoader();
+            } catch (error) {
+                console.error("Erro ao carregar unidades:", error);
+                alert("Erro ao carregar unidades. Por favor, recarregue a página.");
+            }
+        }
+    
+        
+    
+        // Inicialização principal
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+            await loadUnits();
+            
+            // Configura eventos
+            document.getElementById('replacementCount').addEventListener('input', createReplacementHoursInputs);
+            document.getElementById('rdDate').addEventListener('change', calculateReplacement);
+            document.getElementById('unit');
+            
+            
+            // Evento de submit do formulário
+            document.getElementById('rdForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                showLoader();
+                
+                if (!currentUser) {
+                    hideLoader();
+                    alert("Você precisa estar logado para enviar o formulário!");
+                    return window.location.href = 'login.html';
+                }
+                
+                if (!currentUser.emailVerified) {
+                    hideLoader();
+                    if (confirm("Seu email não foi verificado. Deseja reenviar o email de verificação?")) {
+                        try {
+                            await sendEmailVerification(currentUser);
+                            alert("Email de verificação reenviado. Por favor, verifique sua caixa de entrada.");
+                        } catch (error) {
+                            console.error("Erro ao reenviar email de verificação:", error);
+                            alert("Erro ao reenviar email de verificação. Por favor, tente novamente mais tarde.");
+                        }
+                    }
+                    return;
+                }
+                
+                // Coleta os dados do formulário
+                const formData = {
+                    rdDate: document.getElementById('rdDate').value,
+                    unitId: document.getElementById('unit').value,
+                    unitName: units.find(u => u.id === document.getElementById('unit').value)?.name || '',
+                    responsible: document.getElementById('responsible').value,
+                    attended: parseInt(document.getElementById('attended').value) || 0,
+                    absent: parseInt(document.getElementById('absent').value) || 0,
+                    replacementCount: parseInt(document.getElementById('replacementCount').value) || 0,
+                    replacementHours: Array.from(document.querySelectorAll('.replacement-hour')).map(input => parseInt(input.value) || 0),
+                    totalReplacementHours: totalCalculatedHours,
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    timestamp: new Date().toISOString()
+                };
+    
+                // Validação
+                if (!formData.rdDate || !formData.unitId || !formData.responsible || isNaN(formData.attended) || isNaN(formData.absent)) {
+                    hideLoader();
+                    return alert("Por favor, preencha todos os campos obrigatórios.");
+                }
+    
+                try {
+                    // Salva no Firebase
+                    await set(push(ref(database, 'matrizMetasRecords/')), formData);
+                    
+                    // Feedback e reset
+                    hideLoader();
+                    alert("Dados de RD enviados com sucesso!");
+                    resetForm();
+                } catch (error) {
+                    hideLoader();
+                    console.error("Erro ao salvar dados:", error);
+                    alert(error.code === 'PERMISSION_DENIED' ? 
+                        "Permissão negada. Verifique se você está logado e seu email foi verificado." : 
+                        "Ocorreu um erro ao enviar os dados. Por favor, tente novamente.");
+                }
+            });
+            
+            calculateReplacement();
+        });
+    
+        function resetForm() {
+            document.getElementById('rdForm').reset();
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+            document.getElementById('unit').value = "";
+            document.getElementById('replacementHoursContainer').innerHTML = '';
+            document.getElementById('employeeCheckboxes').innerHTML = '';
+            imageBase64 = null;
+            
+            // Reinicia os campos de função
+            addFunctionRow();
+            updateInterfaceBasedOnUnit();
+        }
+    
+        // Monitora o estado de autenticação
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (!user) return window.location.href = 'index.html';
+            
+            if (!user.emailVerified && confirm("Seu e-mail não foi verificado. Deseja reenviar o e-mail de verificação?")) {
+                sendEmailVerification(user).then(() => {
+                    alert("E-mail de verificação reenviado. Por favor, verifique sua caixa de entrada.");
+                }).catch(error => {
+                    console.error("Erro ao reenviar e-mail:", error);
+                    alert("Erro ao reenviar e-mail de verificação.");
+                });
+            }
+        });
+    </script>
+</body>
+</html>

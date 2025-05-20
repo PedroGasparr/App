@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de RD - Matriz Metas</title>
+    <link rel="icon" href="img/social-media.gif" type="image/x-icon">
+    <style>
+        /* Mantenha todos os estilos CSS anteriores */
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 28px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+            background-color: var(--light);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 25px;
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .back-button {
+            background-color: var(--gray);
+            margin-top: 15px;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        #loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loader div {
+            background: white;
+            padding: 30px 40px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .form-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div>Carregando...</div>
+    </div>
+
+    <div class="form-container">
+        <h1>Checklist RDO - Matriz Metas</h1>
+        <form id="rdForm">
+            <label for="rdDate">Data e Hora:</label>
+            <input type="datetime-local" id="rdDate" required readonly>
+
+            <label for="unit">Unidade:</label>
+            <select id="unit" required>
+                <option value="">Selecione uma unidade</option>
+                <!-- As opções serão preenchidas dinamicamente pelo JavaScript -->
+            </select>
+
+            <label for="responsible">Responsável:</label>
+            <input type="text" id="responsible" required>
+
+            <label for="meta_1">Meta 1:</label>
+            <input type="number" id="meta_1" placeholder="Digite a meta 1" required min="0">
+
+            <label for="meta_2">Meta 2:</label>
+            <input type="number" id="meta_2" placeholder="Digite a meta 2" required min="0">
+
+            <label for="meta_3">Meta 3:</label>
+            <input type="number" id="meta_3" placeholder="Digite a meta 3" required min="0">
+
+            <label for="meta_4">Meta 4:</label>
+            <input type="number" id="meta_4" placeholder="Digite a meta 4" required min="0">
+
+            <label for="meta_5">Meta 5:</label>
+            <input type="number" id="meta_5" placeholder="Digite a meta 5" required min="0">
+            
+            <button type="submit">Enviar</button>
+        </form>
+
+        <button class="back-button" onclick="window.location.href = 'zhome.html';">Voltar ao Dashboard</button>
+    </div>
+
+    <script src="js.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            sendEmailVerification
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { 
+            getDatabase, 
+            ref, 
+            push, 
+            set,
+            get,
+            child
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        
+
+
+        // Variáveis globais acessíveis para o js.js
+        let units = [];
+        let currentUser = null;
+        
+        // Funções auxiliares
+        function getBrazilianDateTime() {
+            const now = new Date();
+            const localOffset = now.getTimezoneOffset();
+            const brasilOffset = -180;
+            const diff = (brasilOffset + localOffset) * 60000;
+            return new Date(now.getTime() + diff);
+        }
+
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        async function loadEmployees(unitId) {
+            try {
+                showLoader();
+                const dbRef = ref(database);
+                const snapshot = await get(child(dbRef, `units/${unitId}/employees`));
+                
+                if (snapshot.exists()) {
+                    employees[unitId] = [];
+                    for (const employeeId in snapshot.val()) {
+                        employees[unitId].push(snapshot.val()[employeeId].name);
+                    }
+                    
+                    employees[unitId].sort((a, b) => a.localeCompare(b));
+                    generateEmployeeCheckboxes(unitId);
+                } else {
+                    document.getElementById('employeeCheckboxes').innerHTML = '<p>Nenhum funcionário cadastrado nesta unidade.</p>';
+                }
+                hideLoader();
+            } catch (error) {
+                hideLoader();
+                console.error(`Erro ao carregar funcionários da unidade ${unitId}:`, error);
+                alert("Erro ao carregar funcionários. Por favor, tente novamente.");
+            }
+        }
+
+        function showLoader() {
+            document.getElementById('loader').style.display = 'flex';
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        async function loadUnits() {
+  try {
+    showLoader();
+    const snapshot = await get(ref(database, 'units'));
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      units = [];
+      for (const unitId in data) {
+        units.push({ id: unitId, name: data[unitId].name });
+      }
+
+      // Ordena pelo nome
+      units.sort((a, b) => a.name.localeCompare(b.name));
+
+      const unitSelect = document.getElementById('unit');
+      unitSelect.innerHTML = '<option value="">Selecione uma unidade</option>';
+      units.forEach(unit => {
+        const option = document.createElement('option');
+        option.value = unit.id;
+        option.textContent = unit.name;
+        unitSelect.appendChild(option);
+      });
+    }
+    hideLoader();
+  } catch (error) {
+    hideLoader();
+    console.error("Erro ao carregar unidades:", error);
+    alert("Erro ao carregar unidades. Por favor, recarregue a página.");
+  }
+}
+
+        // Inicialização principal
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+            
+            
+            // Espera a inicialização do Firebase pelo js.js
+            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                initializeForm();
+            } else {
+                const checkFirebaseInterval = setInterval(() => {
+                    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                        clearInterval(checkFirebaseInterval);
+                        initializeForm();
+                    }
+                }, 200);
+            }
+        });
+
+        function initializeForm() {
+            // Configura o evento de submit do formulário
+            document.getElementById('rdForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                showLoader();
+                
+                if (!currentUser) {
+                    hideLoader();
+                    alert("Você precisa estar logado para enviar o formulário!");
+                    return window.location.href = 'login.html';
+                }
+                
+                if (!currentUser.emailVerified) {
+                    hideLoader();
+                    alert("Seu email não foi verificado. Por favor, verifique sua caixa de entrada.");
+                    return;
+                }
+                
+                // Coleta os dados do formulário
+                const formData = {
+                    date: document.getElementById('rdDate').value,
+                    unitId: document.getElementById('unit').value,
+                    unitName: units.find(u => u.id === document.getElementById('unit').value)?.name || '',
+                    responsible: document.getElementById('responsible').value.trim(),
+                    meta_1: parseInt(document.getElementById('meta_1').value) || 0,
+                    meta_2: parseInt(document.getElementById('meta_2').value) || 0,
+                    meta_3: parseInt(document.getElementById('meta_3').value) || 0,
+                    meta_4: parseInt(document.getElementById('meta_4').value) || 0,
+                    meta_5: parseInt(document.getElementById('meta_5').value) || 0,
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    timestamp: new Date().toISOString()
+                };
+    
+                // Validação
+                if (!formData.date || !formData.unitId || !formData.responsible) {
+                    hideLoader();
+                    return alert("Por favor, preencha todos os campos obrigatórios.");
+                }
+    
+                try {
+                    // Salva no Firebase no nó matrizMetasRecords
+                    const newRecordRef = database.ref('matrizMetasRecords').push();
+                    await newRecordRef.set(formData);
+                    
+                    // Também salva uma referência no nó do usuário
+                    const userRecordRef = database.ref(`user_records/${currentUser.uid}/${newRecordRef.key}`);
+                    await userRecordRef.set(true);
+                    
+                    // Feedback e reset
+                    hideLoader();
+                    alert("Metas da matriz enviadas com sucesso!");
+                    document.getElementById('rdForm').reset();
+                    document.getElementById('rdDate').value = formatDateTime(getBrazilianDateTime());
+                } catch (error) {
+                    hideLoader();
+                    console.error("Erro detalhado:", error);
+                    alert(`Erro ao enviar os dados: ${error.message}`);
+                }
+            });
+        }
+        console.log(database);
+    </script>
+</body>
+</html>
